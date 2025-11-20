@@ -1,0 +1,16 @@
+[gd_scene load_steps=3 format=3 uid="uid://d33tj0x1j335v"]
+
+[ext_resource type="Script" uid="uid://blbdi0jhbpurb" path="res://scenes/Chess/Board/Tile/chess_board_tile.gd" id="1_842r4"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_qg68c"]
+size = Vector3(1, 0, 1)
+
+[node name="ChessBoardTile" type="Area3D"]
+script = ExtResource("1_842r4")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_qg68c")
+
+[connection signal="input_event" from="." to="." method="_on_input_event"]
+[connection signal="mouse_entered" from="." to="." method="_on_mouse_entered"]
+[connection signal="mouse_exited" from="." to="." method="_on_mouse_exited"]

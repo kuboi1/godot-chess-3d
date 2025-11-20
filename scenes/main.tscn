@@ -1,0 +1,48 @@
+[gd_scene load_steps=8 format=3 uid="uid://d1uudo8essa02"]
+
+[ext_resource type="PackedScene" uid="uid://btdpfqmj8sw0b" path="res://scenes/Chess/Controller/chess_controller.tscn" id="1_sugp2"]
+[ext_resource type="PackedScene" uid="uid://cyepik78pv6n7" path="res://scenes/Chess/Services/StartingPositionGenerator/chess_starting_position_generator.tscn" id="2_0wfyh"]
+[ext_resource type="Script" uid="uid://d26fqpjk5yt8i" path="res://scenes/Chess/Services/StartingPositionGenerator/chess_piece_placement.gd" id="3_sugp2"]
+
+[sub_resource type="Resource" id="Resource_jyhfs"]
+script = ExtResource("3_sugp2")
+position = "a4"
+piece = 0
+player = 0
+metadata/_custom_type_script = "uid://d26fqpjk5yt8i"
+
+[sub_resource type="Resource" id="Resource_sugp2"]
+script = ExtResource("3_sugp2")
+position = "h4"
+piece = 0
+player = 1
+metadata/_custom_type_script = "uid://d26fqpjk5yt8i"
+
+[sub_resource type="Resource" id="Resource_tbgi4"]
+script = ExtResource("3_sugp2")
+position = "e7"
+piece = 5
+player = 0
+metadata/_custom_type_script = "uid://d26fqpjk5yt8i"
+
+[sub_resource type="Resource" id="Resource_tefeu"]
+script = ExtResource("3_sugp2")
+position = "f8"
+piece = 1
+player = 1
+metadata/_custom_type_script = "uid://d26fqpjk5yt8i"
+
+[node name="Main" type="Node3D"]
+
+[node name="ChessController" parent="." node_paths=PackedStringArray("starting_position_generator") instance=ExtResource("1_sugp2")]
+starting_position_generator = NodePath("ChessStartingPositionGenerator")
+
+[node name="ChessStartingPositionGenerator" parent="ChessController" instance=ExtResource("2_0wfyh")]
+_placements = Array[ExtResource("3_sugp2")]([SubResource("Resource_jyhfs"), SubResource("Resource_sugp2"), SubResource("Resource_tbgi4"), SubResource("Resource_tefeu")])
+_fen_notation_position = "1K2n3/3PR3/2k2P2/5R2/3PP1pr/4p2P/3bpB2/8"
+
+[node name="SpotLight3D" type="SpotLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.022792, 0.99974, 0, -0.99974, 0.022792, 0, 9.10203, 0)
+light_energy = 16.0
+spot_range = 16.0
+spot_angle = 60.0

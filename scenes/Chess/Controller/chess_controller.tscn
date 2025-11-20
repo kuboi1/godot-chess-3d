@@ -1,0 +1,17 @@
+[gd_scene load_steps=4 format=3 uid="uid://btdpfqmj8sw0b"]
+
+[ext_resource type="Script" uid="uid://8ret5vl7var6" path="res://scenes/Chess/Controller/chess_controller.gd" id="1_gywdk"]
+[ext_resource type="PackedScene" uid="uid://d1wh5magssg4l" path="res://scenes/Chess/Board/chess_board.tscn" id="2_cg5sl"]
+[ext_resource type="PackedScene" uid="uid://bbs8tgnymvc4c" path="res://scenes/Chess/Camera/chess_camera.tscn" id="3_4ovs5"]
+
+[node name="ChessController" type="Node3D"]
+script = ExtResource("1_gywdk")
+
+[node name="ChessBoard" parent="." instance=ExtResource("2_cg5sl")]
+
+[node name="ChessCamera" parent="." instance=ExtResource("3_4ovs5")]
+
+[connection signal="tile_clicked" from="ChessBoard" to="." method="_on_chess_board_tile_clicked"]
+[connection signal="tile_hovered" from="ChessBoard" to="." method="_on_chess_board_tile_hovered"]
+[connection signal="animation_finished" from="ChessCamera" to="." method="_on_chess_camera_animation_finished"]
+[connection signal="animation_started" from="ChessCamera" to="." method="_on_chess_camera_animation_started"]

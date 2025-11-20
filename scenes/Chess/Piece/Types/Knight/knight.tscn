@@ -1,0 +1,23 @@
+[gd_scene load_steps=5 format=3 uid="uid://itum15cxjhym"]
+
+[ext_resource type="PackedScene" uid="uid://dosodo6vnwnuh" path="res://scenes/Chess/Piece/chess_piece.tscn" id="1_c5jw8"]
+[ext_resource type="Script" uid="uid://60hxxof5tcwx" path="res://scenes/Chess/Piece/Types/Knight/knight_movement_component.gd" id="2_fdwdl"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_fdwdl"]
+size = Vector3(0.3, 1.2, 0.3)
+
+[sub_resource type="BoxMesh" id="BoxMesh_u5ktb"]
+size = Vector3(0.2, 0.2, 0.3)
+
+[node name="Knight" instance=ExtResource("1_c5jw8")]
+type = 3
+
+[node name="Mesh" parent="." index="0"]
+mesh = SubResource("BoxMesh_fdwdl")
+
+[node name="MovementComponent" parent="." index="2"]
+script = ExtResource("2_fdwdl")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." index="3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.881407, 0.294309)
+mesh = SubResource("BoxMesh_u5ktb")

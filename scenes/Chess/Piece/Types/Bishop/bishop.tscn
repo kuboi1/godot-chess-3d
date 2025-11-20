@@ -1,0 +1,16 @@
+[gd_scene load_steps=4 format=3 uid="uid://cpf8kukxmcj4x"]
+
+[ext_resource type="PackedScene" uid="uid://dosodo6vnwnuh" path="res://scenes/Chess/Piece/chess_piece.tscn" id="1_ubp87"]
+[ext_resource type="Script" uid="uid://cjhmm75j5auit" path="res://scenes/Chess/Piece/Types/Bishop/bishop_movement_component.gd" id="2_2gyeh"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_2gyeh"]
+size = Vector3(0.35, 1.2, 0.35)
+
+[node name="Bishop" instance=ExtResource("1_ubp87")]
+type = 4
+
+[node name="Mesh" parent="." index="0"]
+mesh = SubResource("BoxMesh_2gyeh")
+
+[node name="MovementComponent" parent="." index="2"]
+script = ExtResource("2_2gyeh")

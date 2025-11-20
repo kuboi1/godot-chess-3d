@@ -1,0 +1,40 @@
+# TEMPLATE GODOT 4+ .gitignore FILE
+
+# Godot 4+ specific ignores
+.godot/
+/android/
+*.translation
+
+# Godot-specific files
+*.import
+
+# Imported translations (automatically generated from CSV files)
+*.translation
+
+# System/tool-specific ignores
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Build artifacts
+builds/
+*.exe
+*.pck
+*.zip
+*.dmg
+*.app
+
+# Logs and databases
+*.log
+*.sql
+*.sqlite
+
+# AI agents
+.claude/
+CLAUDE.md
+Claude.md
+AGENTS.md
+Agents.md
+fix_gd_tabs.py

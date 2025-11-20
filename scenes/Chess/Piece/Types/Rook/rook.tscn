@@ -1,0 +1,10 @@
+[gd_scene load_steps=3 format=3 uid="uid://d10t26yp5ouoe"]
+
+[ext_resource type="PackedScene" uid="uid://dosodo6vnwnuh" path="res://scenes/Chess/Piece/chess_piece.tscn" id="1_y7u42"]
+[ext_resource type="Script" uid="uid://bt8wb0pt20ysc" path="res://scenes/Chess/Piece/Types/Rook/rook_movement_component.gd" id="2_ckhv0"]
+
+[node name="Rook" instance=ExtResource("1_y7u42")]
+type = 2
+
+[node name="MovementComponent" parent="." index="2"]
+script = ExtResource("2_ckhv0")

@@ -1,0 +1,28 @@
+[gd_scene load_steps=6 format=3 uid="uid://d38s0w5vgfpa8"]
+
+[ext_resource type="PackedScene" uid="uid://dosodo6vnwnuh" path="res://scenes/Chess/Piece/chess_piece.tscn" id="1_king"]
+[ext_resource type="Script" uid="uid://bydi1hyp17ty8" path="res://scenes/Chess/Piece/Types/King/king_movement_component.gd" id="2_king_movement"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_nqsge"]
+size = Vector3(0.5, 1.5, 0.5)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_y10wo"]
+albedo_color = Color(1, 0.701961, 0, 1)
+
+[sub_resource type="TorusMesh" id="TorusMesh_opyyt"]
+material = SubResource("StandardMaterial3D_y10wo")
+inner_radius = 0.354
+outer_radius = 0.597
+
+[node name="King" instance=ExtResource("1_king")]
+
+[node name="Mesh" parent="." index="0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, 0)
+mesh = SubResource("BoxMesh_nqsge")
+
+[node name="MovementComponent" parent="." index="2"]
+script = ExtResource("2_king_movement")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." index="3"]
+transform = Transform3D(7.64274e-16, -1.74846e-08, 0.4, -0.4, -1.74846e-08, 0, 1.74846e-08, -0.4, -1.74846e-08, 0, 1.72358, 0)
+mesh = SubResource("TorusMesh_opyyt")

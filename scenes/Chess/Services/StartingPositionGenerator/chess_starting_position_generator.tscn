@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://cyepik78pv6n7"]
+
+[ext_resource type="Script" uid="uid://bs7o0pkyqqpei" path="res://scenes/Chess/Services/StartingPositionGenerator/chess_starting_position_generator.gd" id="1_3ondc"]
+
+[node name="ChessStartingPositionGenerator" type="Node"]
+script = ExtResource("1_3ondc")
