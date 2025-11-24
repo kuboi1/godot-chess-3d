@@ -32,11 +32,12 @@ func calculate_legal_moves(
 	
 	# Get piece specific legal moves
 	var legal_moves = _get_piece_legal_moves(
-		current_pos, 
-		board, 
-		board_dimension, 
-		piece_owner, 
-		move_idx
+		current_pos,
+		board,
+		board_dimension,
+		piece_owner,
+		move_idx,
+		validate_checks
 	)
 	
 	if validate_checks:
@@ -103,12 +104,14 @@ func _filter_out_check_moves(
 
 
 # PIECE SPECIFIC LOGIC HERE
+@warning_ignore('unused_parameter')
 func _get_piece_legal_moves(
 	current_pos: Vector2i,
 	board: Array[Array],
 	board_dimensions: Vector2i,
 	piece_owner: ChessController.Player,
-	move_idx: int
+	move_idx: int,
+	validate_checks: bool
 ) -> Array[ChessMove]:
 	# Implementation in derived components
 	return []

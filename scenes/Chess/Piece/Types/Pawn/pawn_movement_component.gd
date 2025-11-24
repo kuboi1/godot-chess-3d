@@ -7,14 +7,16 @@ func _get_piece_legal_moves(
 	board: Array[Array],
 	board_dimensions: Vector2i,
 	piece_owner: ChessController.Player,
-	move_idx: int
+	move_idx: int,
+	_validate_checks: bool
 ) -> Array[ChessMove]:
 	var legal_moves: Array[ChessMove] = []
 	
 	# Determine forward direction based on player
 	var forward_direction: int = 1 if piece_owner == ChessController.Player.WHITE else -1
 	
-	# Determine promotion rank (last rank)
+	# Determine ranks
+	var starting_rank = 1 if piece_owner == ChessController.Player.WHITE else board_dimensions.y - 2
 	var promotion_rank: int = board_dimensions.y - 1 if piece_owner == ChessController.Player.WHITE else 0
 	
 	# Forward movement
@@ -29,8 +31,8 @@ func _get_piece_legal_moves(
 			else:
 				legal_moves.append(ChessMove.new(one_forward))
 			
-			# Two square forward movement
-			if not has_moved():
+			# Two square forward movement (only from starting rank)
+			if current_pos.y == starting_rank:
 				var two_forward = current_pos + Vector2i(0, forward_direction * 2)
 				if _is_in_board_bounds(two_forward, board_dimensions):
 					# two_forward_tile: ChessBoardTile|_SimulatedTile
@@ -73,8 +75,8 @@ func _check_en_passant(
 ) -> Array[ChessMove]:
 	var en_passant_moves: Array[ChessMove] = []
 	
-	# White pawns can en passant on rank 5 (y=4), Black pawns on rank 4 (y=3)
-	var en_passant_rank = 4 if piece_owner == ChessController.Player.WHITE else 3
+	# White pawns can en passant on rank 5, Black pawns on rank 4
+	var en_passant_rank = board_dimensions.y - 4 if piece_owner == ChessController.Player.WHITE else board_dimensions.y - 5
 	if current_pos.y != en_passant_rank:
 		return en_passant_moves
 	

@@ -3,16 +3,20 @@ extends Node
 
 
 enum StartingPositionType {
-	EXPORT_VAR,
+	CUSTOM,
 	FEN_NOTATION
 }
 
 @export_category('Config')
 @export var active: bool = true
-@export var use_position: StartingPositionType = StartingPositionType.EXPORT_VAR
+@export var use_position: StartingPositionType = StartingPositionType.CUSTOM
+@export var player_to_move: ChessController.Player
 
 @export_category('Positions')
+@export_subgroup('Custom')
 @export var _placements: Array[ChessPiecePlacement] = []
+@export_subgroup('Fen')
+## Only supports the first part of the string. Who's move it is is determined by the player_to_move export var
 @export var _fen_notation_position: String
 
 # Pieces preloads
@@ -60,6 +64,10 @@ func generate_position(board: Array[Array]) -> Array[Array]:
 		var piece_instance: ChessPiece = PIECE_SCENES[placement.piece].instantiate()
 		
 		piece_instance.owner_player = placement.player
+		
+		# Rotate black pieces to face inside the board
+		if placement.player == ChessController.Player.BLACK:
+			piece_instance.rotation_degrees.y = 180
 		
 		tile.piece = piece_instance
 	

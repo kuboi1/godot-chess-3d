@@ -360,7 +360,7 @@ position_x = "b"
 position_y = "8"
 
 [node name="Knight" parent="Tiles/B8" instance=ExtResource("5_ij87f")]
-transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -0.0, 0, -0.0)
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 0)
 owner_player = 1
 
 [node name="C8" parent="Tiles" instance=ExtResource("2_maaw1")]
@@ -401,7 +401,7 @@ position_x = "g"
 position_y = "8"
 
 [node name="Knight" parent="Tiles/G8" instance=ExtResource("5_ij87f")]
-transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -0.0, 0, -0.0)
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 0)
 owner_player = 1
 
 [node name="H8" parent="Tiles" instance=ExtResource("2_maaw1")]

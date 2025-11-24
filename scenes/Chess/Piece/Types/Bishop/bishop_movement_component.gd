@@ -3,11 +3,12 @@ extends ChessPieceMovementComponent
 
 
 func _get_piece_legal_moves(
-	current_pos: Vector2i, 
+	current_pos: Vector2i,
 	board: Array[Array],
 	board_dimensions: Vector2i,
 	piece_owner: ChessController.Player,
-	_move_idx: int
+	_move_idx: int,
+	_validate_checks: bool
 ) -> Array[ChessMove]:
 	var legal_moves: Array[ChessMove] = []
 	

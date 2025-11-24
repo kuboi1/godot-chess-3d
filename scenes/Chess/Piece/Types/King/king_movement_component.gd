@@ -7,7 +7,8 @@ func _get_piece_legal_moves(
 	board: Array[Array],
 	board_dimensions: Vector2i,
 	piece_owner: ChessController.Player,
-	_move_idx: int
+	_move_idx: int,
+	validate_checks: bool
 ) -> Array[ChessMove]:
 	var legal_moves: Array[ChessMove] = []
 	
@@ -43,12 +44,12 @@ func _get_piece_legal_moves(
 	# Castling logic
 	if not has_moved():
 		# Kingside castling (right)
-		var kingside_castling_move = _check_castling_move(current_pos, board, piece_owner, true, _move_idx)
+		var kingside_castling_move = _check_castling_move(current_pos, board, piece_owner, true, _move_idx, validate_checks)
 		if kingside_castling_move != null:
 			legal_moves.append(kingside_castling_move)
 		
 		# Queenside castling (left)
-		var queenside_castling_move = _check_castling_move(current_pos, board, piece_owner, false, _move_idx)
+		var queenside_castling_move = _check_castling_move(current_pos, board, piece_owner, false, _move_idx, validate_checks)
 		if queenside_castling_move != null:
 			legal_moves.append(queenside_castling_move)
 	
@@ -58,11 +59,12 @@ func _get_piece_legal_moves(
 # Helper function to check if castling is possible
 # Returns a ChessMove if castling is legal, otherwise null
 func _check_castling_move(
-	current_pos: Vector2i, 
-	board: Array[Array], 
-	piece_owner: ChessController.Player, 
-	kingside: bool, 
-	move_idx: int
+	current_pos: Vector2i,
+	board: Array[Array],
+	piece_owner: ChessController.Player,
+	kingside: bool,
+	move_idx: int,
+	validate_checks: bool
 ) -> ChessMove:
 	var board_width = board[0].size()
 	
@@ -107,20 +109,23 @@ func _check_castling_move(
 			return null
 		x += direction
 	
-	var opposing_player := ChessUtils.get_opposing_player(piece_owner)
+	# Only validate castling through check if validate_checks is true
+	# This prevents infinite recursion when checking attack patterns
+	if validate_checks:
+		var opposing_player := ChessUtils.get_opposing_player(piece_owner)
+		
+		# King must not be in check
+		if ChessBoardUtils.is_position_attacked(current_pos, opposing_player, board, move_idx):
+			return null
+		
+		# King must not pass through a square that is under attack
+		var passing_through_pos = Vector2i(current_pos.x + direction, current_pos.y)
+		if ChessBoardUtils.is_position_attacked(passing_through_pos, opposing_player, board, move_idx):
+			return null
+		
+		# King must not end up in check after castling
+		var destination_pos = Vector2i(king_destination_x, current_pos.y)
+		if ChessBoardUtils.is_position_attacked(destination_pos, opposing_player, board, move_idx):
+			return null
 	
-	# King must not be in check
-	if ChessBoardUtils.is_position_attacked(current_pos, opposing_player, board, move_idx):
-		return null
-	
-	# King must not pass through a square that is under attack
-	var passing_through_pos = Vector2i(current_pos.x + direction, current_pos.y)
-	if ChessBoardUtils.is_position_attacked(passing_through_pos, opposing_player, board, move_idx):
-		return null
-	
-	# King must not end up in check after castling
-	var destination_pos = Vector2i(king_destination_x, current_pos.y)
-	if ChessBoardUtils.is_position_attacked(destination_pos, opposing_player, board, move_idx):
-		return null
-	
-	return ChessMove.new(destination_pos, ChessMove.Type.CASTLE, {rook = rook_piece})
+	return ChessMove.new(Vector2i(king_destination_x, current_pos.y), ChessMove.Type.CASTLE, {rook = rook_piece})
