@@ -37,11 +37,15 @@ func _ready() -> void:
 	if starting_position_generator:
 		if starting_position_generator.active:
 			starting_position_generator.generate_position(_board_tiles)
-		# Free generator it will not be needed anymore
+			_current_player = starting_position_generator.player_to_move
+		# Free the generator it will not be needed anymore
 		# Remove this in the future if resets or new positions are implemented
 		starting_position_generator.queue_free()
 	
 	n_camera.call_deferred('set_player', _current_player, true)
+	
+	# Safety check for positions starting with check/checkmate/stalemate
+	_check_for_game_over(_current_player)
 
 
 func _input(event: InputEvent) -> void:

@@ -3,37 +3,37 @@ extends Node3D
 
 
 enum Position {
-	PLAYER_WHITE,
-	PLAYER_BLACK,
-	OVERHEAD_WHITE,
-	OVERHEAD_BLACK
+	WHITE_DEFAULT,
+	BLACK_DEFAULT,
+	WHITE_OVERHEAD,
+	BLACK_OVERHEAD
 }
 
 const STARTING_POSITIONS = {
-	Position.PLAYER_WHITE: {
+	Position.WHITE_DEFAULT: {
 		'arm_length': 7.0,
 		'rotation': Vector3(deg_to_rad(-32.0), deg_to_rad(0.0), deg_to_rad(0.0))
 	},
-	Position.PLAYER_BLACK: {
+	Position.BLACK_DEFAULT: {
 		'arm_length': 7.0,
 		'rotation': Vector3(deg_to_rad(-32.0), deg_to_rad(180.0), deg_to_rad(0.0))
 	}
 }
 
 const POSITIONS = {
-	Position.PLAYER_WHITE: {
+	Position.WHITE_DEFAULT: {
 		'arm_length': 8.0,
 		'rotation': Vector3(deg_to_rad(-45.0), deg_to_rad(0.0), deg_to_rad(0.0))
 	},
-	Position.PLAYER_BLACK: {
+	Position.BLACK_DEFAULT: {
 		'arm_length': 8.0,
 		'rotation': Vector3(deg_to_rad(-45.0), deg_to_rad(180.0), deg_to_rad(0.0))
 	},
-	Position.OVERHEAD_WHITE: {
+	Position.WHITE_OVERHEAD: {
 		'arm_length': 7.0,
 		'rotation': Vector3(deg_to_rad(-90.0), deg_to_rad(0.0), deg_to_rad(0.0))
 	},
-	Position.OVERHEAD_BLACK: {
+	Position.BLACK_OVERHEAD: {
 		'arm_length': 7.0,
 		'rotation': Vector3(deg_to_rad(-90.0), deg_to_rad(180.0), deg_to_rad(0.0))
 	}
@@ -47,7 +47,7 @@ signal animation_finished
 
 @onready var n_spring_arm = $SpringArm3D
 
-var _current_position: Position = Position.PLAYER_WHITE
+var _current_position: Position = Position.WHITE_DEFAULT
 var _current_player: ChessController.Player = ChessController.Player.WHITE
 
 var _position_locked: bool = false
@@ -62,9 +62,9 @@ func _input(event: InputEvent) -> void:
 			return
 		
 		if _current_player == ChessController.Player.WHITE:
-			_change_position(Position.OVERHEAD_WHITE, overhead_timing)
+			_change_position(Position.WHITE_OVERHEAD, overhead_timing)
 		elif _current_player == ChessController.Player.BLACK:
-			_change_position(Position.OVERHEAD_BLACK, overhead_timing)
+			_change_position(Position.BLACK_OVERHEAD, overhead_timing)
 	
 	if event.is_action_pressed('chess_camera_down'):
 		if not _is_overhead():
@@ -100,9 +100,9 @@ func _change_position_to_player(timing: float, init: bool = false) -> void:
 	var pos: Position
 	match _current_player:
 		ChessController.Player.WHITE:
-			pos = Position.PLAYER_WHITE
+			pos = Position.WHITE_DEFAULT
 		ChessController.Player.BLACK:
-			pos = Position.PLAYER_BLACK
+			pos = Position.BLACK_DEFAULT
 		_:
 			return
 	
@@ -114,7 +114,7 @@ func _change_position_to_player(timing: float, init: bool = false) -> void:
 
 
 func _is_overhead() -> bool:
-	return _current_position in [Position.OVERHEAD_WHITE, Position.OVERHEAD_BLACK]
+	return _current_position in [Position.WHITE_OVERHEAD, Position.BLACK_OVERHEAD]
 
 
 func _on_position_change_finished() -> void:
