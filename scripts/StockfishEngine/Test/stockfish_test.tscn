@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://4jg5as3uqpy0"]
+
+[ext_resource type="Script" uid="uid://y1kvi7fwee10" path="res://scripts/StockfishEngine/Test/stockfish_test.gd" id="1_vj8h5"]
+
+[node name="StockfishTest" type="Node"]
+script = ExtResource("1_vj8h5")
