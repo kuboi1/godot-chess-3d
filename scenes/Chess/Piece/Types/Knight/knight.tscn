@@ -19,5 +19,5 @@ mesh = SubResource("BoxMesh_fdwdl")
 script = ExtResource("2_fdwdl")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." index="3"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.881407, 0.294309)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.881407, -0.2963357)
 mesh = SubResource("BoxMesh_u5ktb")
