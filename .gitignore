@@ -31,6 +31,9 @@ builds/
 *.sql
 *.sqlite
 
+# IDE
+.vscode/
+
 # AI agents
 .claude/
 CLAUDE.md
