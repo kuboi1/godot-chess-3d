@@ -1,6 +1,10 @@
 class_name ChessController
 extends Node3D
 
+enum GameType {
+	VS_AI,
+	LOCAL_MULTIPLAYER
+}
 
 enum Player {
 	WHITE,
@@ -11,8 +15,16 @@ signal check(by_player: Player)
 signal checkmate(by_player: Player)
 signal stalemate
 
-@export var starting_position_generator: ChessStartingPositionGenerator
+@export_category('Config')
+@export var game_type: GameType = GameType.LOCAL_MULTIPLAYER
+@export_subgroup('VS AI')
+@export var player_color: Player = Player.WHITE
 
+@export_category('Nodes')
+@export var starting_position_generator: ChessStartingPositionGenerator
+@export var chess_opponent: ChessOpponentComponent
+
+@onready var opponent_controller: ChessOpponentController = $ChessOpponentController
 @onready var n_board: ChessBoard = $ChessBoard
 @onready var n_camera: ChessCamera = $ChessCamera
 
@@ -42,7 +54,25 @@ func _ready() -> void:
 		# Remove this in the future if resets or new positions are implemented
 		starting_position_generator.queue_free()
 	
-	n_camera.call_deferred('set_player', _current_player, true)
+	if game_type == GameType.VS_AI:
+		opponent_controller.player_color = ChessUtils.get_opposing_player(player_color)
+		
+		opponent_controller.thinking_started.connect(_on_opponent_thinking_started)
+		opponent_controller.move_calculated.connect(_on_opponent_move_calculated)
+		
+		if chess_opponent:
+			await register_opponent(chess_opponent)
+		else:
+			push_warning('Chess controller with game type VS_AI initialized without a chess opponent set.')
+		
+		if opponent_controller.player_color == Player.WHITE:
+			opponent_controller.request_move(_board_tiles, _move_idx)
+	
+	n_camera.call_deferred(
+		'set_player', 
+		_current_player if game_type == GameType.LOCAL_MULTIPLAYER else player_color, 
+		true
+	)
 	
 	# Safety check for positions starting with check/checkmate/stalemate
 	_check_for_game_over(_current_player)
@@ -53,10 +83,27 @@ func _input(event: InputEvent) -> void:
 		_swap_player()
 
 
+func register_opponent(opponent: ChessOpponentComponent) -> void:
+	print('[ChessController] New opponent registered: %s' % chess_opponent)
+	chess_opponent = opponent
+	
+	opponent_controller.skill_level = opponent.skill_level
+	opponent_controller.think_time_ms = opponent.think_time_ms
+	opponent_controller.search_depth = opponent.search_depth
+	
+	if not opponent_controller.initialized:
+		await opponent_controller.initialize()
+
+
 func _swap_player() -> void:
 	_current_player = Player.BLACK if _current_player == Player.WHITE else Player.WHITE
 	
-	n_camera.set_player(_current_player)
+	if game_type == GameType.LOCAL_MULTIPLAYER:
+		n_camera.set_player(_current_player)
+	elif game_type == GameType.VS_AI:
+		_locked = false
+		if _current_player != player_color:
+			opponent_controller.request_move(_board_tiles, _move_idx)
 
 
 func _select_piece_on_tile(tile: ChessBoardTile) -> void:
@@ -64,14 +111,14 @@ func _select_piece_on_tile(tile: ChessBoardTile) -> void:
 		return
 	
 	_legal_moves = tile.piece.get_legal_moves(_board_tiles, _move_idx)
-	print('%s legal moves: ' % tile.piece, _legal_moves)
+	print('[ChessController] %s legal moves: ' % tile.piece, _legal_moves)
 	
 	# If piece currently has no legal moves, ignore
 	if _legal_moves.is_empty():
-		print('%s has no legal moves, not selecting' % tile.piece)
+		print('[ChessController] %s has no legal moves, not selecting' % tile.piece)
 		return
 	
-	print('Selected: %s' % tile.piece)
+	print('[ChessController] Selected: %s' % tile.piece)
 	_piece_selected = true
 	_selected_piece_tile = tile
 
@@ -82,8 +129,14 @@ func _deselect_piece() -> void:
 
 
 func _execute_chess_move(move: ChessMove) -> void:
-	var piece: ChessPiece = _selected_piece_tile.piece
-	var tile: ChessBoardTile = _board_tiles[move.pos.y][move.pos.x]
+	var from_tile: ChessBoardTile = _board_tiles[move.from.y][move.from.x]
+	var to_tile: ChessBoardTile = _board_tiles[move.to.y][move.to.x]
+	
+	if not from_tile.has_piece():
+		push_error('Cannot execute chess move: Tile %s does not have a piece!' % from_tile)
+		return
+	
+	var piece: ChessPiece = from_tile.piece
 	
 	_locked = true
 	
@@ -91,8 +144,8 @@ func _execute_chess_move(move: ChessMove) -> void:
 	if not move.is_normal():
 		if move.is_capture():
 			# TODO: Capture animation
-			print('CAPTURE: %s x %s' % [piece, tile.piece])
-			tile.piece.queue_free()
+			print('[ChessController] CAPTURE: %s x %s' % [piece, to_tile.piece])
+			to_tile.piece.queue_free()
 		
 		if move.is_promotion():
 			# Free the pawn first and replace it with the promoted piece
@@ -105,7 +158,7 @@ func _execute_chess_move(move: ChessMove) -> void:
 		if move.type == ChessMove.Type.EN_PASSANT:
 			_execute_en_passant(move)
 	
-	_move_piece(piece, _selected_piece_tile, tile, true)
+	_move_piece(piece, from_tile, to_tile, true)
 	_move_idx += 1
 	
 	# Check if the game is over for the opposing player after the move
@@ -119,14 +172,14 @@ func _execute_castle(move: ChessMove) -> void:
 		push_error('Tried to make a CASTLE move but there is no rook ChessPiece in ChessMove.metadata')
 		return
 	
-	print('%s CASTLES' % Player.keys()[_current_player])
+	print('[ChessController] %s CASTLES' % Player.keys()[_current_player])
 	
 	var rook_piece: ChessPiece = move.metadata.rook
 	var rook_current_pos: Vector2i = rook_piece.board_postion
 	var rook_tile: ChessBoardTile = _board_tiles[rook_current_pos.y][rook_current_pos.x]
 	
 	# Calculate rook's destination based on king's destination
-	var king_destination_x: int = move.pos.x
+	var king_destination_x: int = move.to.x
 	var rook_destination_x: int
 	
 	if rook_current_pos.x > king_destination_x:
@@ -134,7 +187,7 @@ func _execute_castle(move: ChessMove) -> void:
 	else:
 		rook_destination_x = king_destination_x + 1
 	
-	var rook_destination: Vector2i = Vector2i(rook_destination_x, move.pos.y)
+	var rook_destination: Vector2i = Vector2i(rook_destination_x, move.to.y)
 	var rook_destination_tile: ChessBoardTile = _board_tiles[rook_destination.y][rook_destination.x]
 	
 	_move_piece(rook_piece, rook_tile, rook_destination_tile, false)
@@ -145,7 +198,7 @@ func _execute_en_passant(move: ChessMove) -> void:
 		push_error('Tried to make an EN_PASSANT move but there is no captured_piece ChessPiece instance in ChessMove.metadata')
 		return
 	
-	print('EN PASSANT')
+	print('[ChessController] EN PASSANT')
 	
 	var captured_piece: ChessPiece = move.metadata.captured_piece
 	# TODO: Capture animation
@@ -167,7 +220,7 @@ func _move_piece(
 	signal_anim_end: bool,
 	anim_duration: float = 0.3
 ) -> void:
-	print('Executing move #%d: %s from %s to %s' % [_move_idx, piece, from_tile, to_tile])
+	print('[ChessController] Executing move #%d: %s from %s to %s' % [_move_idx, piece, from_tile, to_tile])
 	
 	from_tile.disconnect_piece()
 	to_tile.piece = piece
@@ -202,14 +255,21 @@ func _check_for_game_over(for_player: Player) -> void:
 		if is_player_in_check:
 			var opposing_player := ChessUtils.get_opposing_player(for_player)
 			checkmate.emit(opposing_player)
-			print('CHECKMATE BY %s' % Player.keys()[opposing_player])
+			print('[ChessController] CHECKMATE BY %s' % Player.keys()[opposing_player])
 		else:
-			print('STALEMATE')
+			print('[ChessController] STALEMATE')
 			stalemate.emit()
 	elif is_player_in_check:
 		var opposing_player := ChessUtils.get_opposing_player(for_player)
-		print('CHECK BY %s' % Player.keys()[opposing_player])
+		print('[ChessController] CHECK BY %s' % Player.keys()[opposing_player])
 		check.emit(opposing_player)
+
+
+func _is_players_turn() -> bool:
+	if game_type == GameType.LOCAL_MULTIPLAYER:
+		return true
+	
+	return _current_player == player_color
 
 
 func _on_chess_camera_animation_started() -> void:
@@ -225,31 +285,40 @@ func _on_chess_board_tile_hovered(tile: ChessBoardTile) -> void:
 
 
 func _on_chess_board_tile_clicked(tile: ChessBoardTile) -> void:
-	if _locked:
+	if _locked or not _is_players_turn():
 		return
 	
 	if _piece_selected:
 		if tile == _selected_piece_tile:
 			_deselect_piece()
-			print('Deselected: %s' % tile.piece)
+			print('[ChessController] Deselected: %s' % tile.piece)
 			return
 		
 		if tile.has_piece() and tile.piece.owner_player == _current_player:
 			_select_piece_on_tile(tile)
 			return
 		
-		var move_idx = _legal_moves.find_custom(func(move: ChessMove): return move.pos == tile.board_position)
+		var move_idx = _legal_moves.find_custom(func(move: ChessMove): return move.to == tile.board_position)
 		
 		if move_idx > -1:
 			var move: ChessMove = _legal_moves[move_idx]
 			_execute_chess_move(move)
 		else:
-			print('%s is not a legal move' % tile.position_str)
-	elif tile.has_piece():
+			print('[ChessController] %s is not a legal move' % tile.position_str)
+	elif tile.has_piece() and tile.piece.owner_player == _current_player:
 		_select_piece_on_tile(tile)
-
 
 
 func _on_piece_move_finished() -> void:
 	if not _game_over:
 		_swap_player()
+
+
+func _on_opponent_thinking_started() -> void:
+	print('[ChessController] AI opponent: Thinking started')
+
+
+func _on_opponent_move_calculated(uci_move: String) -> void:
+	var move: ChessMove = ChessUtils.uci_to_chess_move(uci_move, _board_tiles)
+	print('[ChessController] AI opponent: Move calculated - %s' % move)
+	_execute_chess_move(move)

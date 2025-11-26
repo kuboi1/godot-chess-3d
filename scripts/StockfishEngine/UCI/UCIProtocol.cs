@@ -72,19 +72,30 @@ namespace chess3d.StockfishEngine.UCI
 		}
 
 		/// <summary>
-		/// Builds a "go" command with movetime in milliseconds.
+		/// Builds a "go" command with optional movetime (milliseconds) and depth limits.
+		/// Pass -1 to omit a parameter. Stockfish will stop when any specified limit is reached.
 		/// </summary>
-		public static string BuildGoMoveTime(int milliseconds)
+		public static string BuildGo(int moveTimeMs = -1, int depth = -1)
 		{
-			return $"{CMD_GO} {GO_MOVE_TIME} {milliseconds}";
-		}
+			var command = CMD_GO;
 
-		/// <summary>
-		/// Builds a "go" command with depth limit.
-		/// </summary>
-		public static string BuildGoDepth(int depth)
-		{
-			return $"{CMD_GO} {GO_DEPTH} {depth}";
+			if (moveTimeMs > 0)
+			{
+				command += $" {GO_MOVE_TIME} {moveTimeMs}";
+			}
+
+			if (depth > 0)
+			{
+				command += $" {GO_DEPTH} {depth}";
+			}
+
+			// If no parameters specified, default to infinite search
+			if (moveTimeMs <= 0 && depth <= 0)
+			{
+				command += $" {GO_INFINITE}";
+			}
+
+			return command;
 		}
 
 		/// <summary>

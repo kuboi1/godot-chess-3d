@@ -84,7 +84,7 @@ func _filter_out_check_moves(
 		# Simulate the move
 		var simulated_board := ChessBoardUtils.simulate_move(
 			current_pos,
-			move.pos,
+			move.to,
 			board,
 			move_idx
 		)
