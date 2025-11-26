@@ -23,7 +23,7 @@ static func is_position_attacked(
 			var piece_legal_moves := piece.get_legal_moves(board, move_idx, false)
 			
 			for move: ChessMove in piece_legal_moves:
-				if move.pos == board_position:
+				if move.to == board_position:
 					return true
 	
 	# No attacking piece found

@@ -368,7 +368,7 @@ public partial class StockfishEngine : Node
 	}
 
 	// ============================================================================
-	// PUBLIC API METHODS (TO BE IMPLEMENTED BY USER)
+	// PUBLIC API METHODS
 	// ============================================================================
 
 	/// <summary>
@@ -458,12 +458,14 @@ public partial class StockfishEngine : Node
 	}
 
 	/// <summary>
-	/// Requests the best move with a time limit in milliseconds.
+	/// Requests the best move with optional time limit (milliseconds) and depth limit.
+	/// Pass -1 to use defaults or omit a parameter.
 	/// Result will be emitted via BestMoveCalculated signal.
 	/// </summary>
-	public void GetBestMove(int thinkTimeMs)
+	public void GetBestMove(int thinkTimeMs = -1, int depth = -1)
 	{
-		SendCommand(UCIProtocol.BuildGoMoveTime(thinkTimeMs));
+		int finalThinkTime = thinkTimeMs >= 1 ? thinkTimeMs : _defaultThinkTimeMs;
+		SendCommand(UCIProtocol.BuildGo(finalThinkTime, depth));
 	}
 
 	/// <summary>

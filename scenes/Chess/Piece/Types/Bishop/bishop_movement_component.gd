@@ -34,11 +34,11 @@ func _get_piece_legal_moves(
 			
 			if not check_tile.has_piece():
 				# Empty tile -> legal move
-				legal_moves.append(ChessMove.new(check_pos))
+				legal_moves.append(ChessMove.new(current_pos, check_pos))
 			else:
 				if check_tile.piece.owner_player != piece_owner:
 					# Enemy piece, can capture it -> legal move
-					legal_moves.append(ChessMove.new(check_pos, ChessMove.Type.CAPTURE))
+					legal_moves.append(ChessMove.new(current_pos, check_pos, ChessMove.Type.CAPTURE))
 				
 				# Stop the ray (can't move past any piece)
 				break

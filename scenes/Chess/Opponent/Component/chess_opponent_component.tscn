@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://bkwb75dd6wti4"]
+
+[ext_resource type="Script" uid="uid://x5ktgk2c6a5n" path="res://scenes/Chess/Opponent/Component/chess_opponent_component.gd" id="1_v1mfo"]
+
+[node name="ChessOpponentComponent" type="Node"]
+script = ExtResource("1_v1mfo")

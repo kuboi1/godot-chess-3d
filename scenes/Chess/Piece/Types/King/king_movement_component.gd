@@ -36,10 +36,10 @@ func _get_piece_legal_moves(
 		
 		if not check_tile.has_piece():
 			# Empty tile -> legal move
-			legal_moves.append(ChessMove.new(check_pos))
+			legal_moves.append(ChessMove.new(current_pos, check_pos))
 		elif check_tile.piece.owner_player != piece_owner:
 			# Enemy piece, can capture it -> legal move
-			legal_moves.append(ChessMove.new(check_pos, ChessMove.Type.CAPTURE))
+			legal_moves.append(ChessMove.new(current_pos, check_pos, ChessMove.Type.CAPTURE))
 	
 	# Castling logic
 	if not has_moved():
@@ -128,4 +128,4 @@ func _check_castling_move(
 		if ChessBoardUtils.is_position_attacked(destination_pos, opposing_player, board, move_idx):
 			return null
 	
-	return ChessMove.new(Vector2i(king_destination_x, current_pos.y), ChessMove.Type.CASTLE, {rook = rook_piece})
+	return ChessMove.new(current_pos, Vector2i(king_destination_x, current_pos.y), ChessMove.Type.CASTLE, {rook = rook_piece})

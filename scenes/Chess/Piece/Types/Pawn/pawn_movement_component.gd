@@ -27,9 +27,9 @@ func _get_piece_legal_moves(
 		if not one_forward_tile.has_piece():
 			# Check for promotion
 			if _is_promotion_pos(one_forward, promotion_rank):
-				legal_moves.append(ChessMove.new(one_forward, ChessMove.Type.PROMOTION))
+				legal_moves.append(ChessMove.new(current_pos, one_forward, ChessMove.Type.PROMOTION))
 			else:
-				legal_moves.append(ChessMove.new(one_forward))
+				legal_moves.append(ChessMove.new(current_pos, one_forward))
 			
 			# Two square forward movement (only from starting rank)
 			if current_pos.y == starting_rank:
@@ -38,7 +38,7 @@ func _get_piece_legal_moves(
 					# two_forward_tile: ChessBoardTile|_SimulatedTile
 					var two_forward_tile = board[two_forward.y][two_forward.x]
 					if not two_forward_tile.has_piece():
-						legal_moves.append(ChessMove.new(two_forward))
+						legal_moves.append(ChessMove.new(current_pos, two_forward))
 	
 	# Diagonal captures
 	var diagonal_offsets: Array[Vector2i] = [
@@ -54,9 +54,9 @@ func _get_piece_legal_moves(
 			if diagonal_tile.has_piece() and diagonal_tile.piece.owner_player != piece_owner:
 				# Check for promotion
 				if _is_promotion_pos(diagonal_pos, promotion_rank):
-					legal_moves.append(ChessMove.new(diagonal_pos, ChessMove.Type.PROMOTION_CAPTURE))
+					legal_moves.append(ChessMove.new(current_pos, diagonal_pos, ChessMove.Type.PROMOTION_CAPTURE))
 				else:
-					legal_moves.append(ChessMove.new(diagonal_pos, ChessMove.Type.CAPTURE))
+					legal_moves.append(ChessMove.new(current_pos, diagonal_pos, ChessMove.Type.CAPTURE))
 	
 	# En passant
 	var en_passant_moves = _check_en_passant(current_pos, board, board_dimensions, piece_owner, forward_direction, move_idx)
@@ -102,7 +102,7 @@ func _check_en_passant(
 		):
 			var capture_pos = current_pos + Vector2i(x_offset, forward_direction)
 			en_passant_moves.append(
-				ChessMove.new(capture_pos, ChessMove.Type.EN_PASSANT, {captured_piece = adjacent_piece})
+				ChessMove.new(current_pos, capture_pos, ChessMove.Type.EN_PASSANT, {captured_piece = adjacent_piece})
 			)
 	
 	return en_passant_moves

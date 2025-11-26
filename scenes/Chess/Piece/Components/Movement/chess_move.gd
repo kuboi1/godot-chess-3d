@@ -11,19 +11,21 @@ enum Type {
 	PROMOTION_CAPTURE
 }
 
-var pos: Vector2i
+var from: Vector2i
+var to: Vector2i
 var type: Type
 var metadata: Dictionary
 
 
-func _init(pos: Vector2i, type: Type = Type.NORMAL, metadata: Dictionary = {}) -> void:
-	self.pos = pos
+func _init(from: Vector2i, to: Vector2i, type: Type = Type.NORMAL, metadata: Dictionary = {}) -> void:
+	self.from = from
+	self.to = to
 	self.type = type
 	self.metadata = metadata
 
 
 func _to_string() -> String:
-	return 'ChessMove:<%s:(%d,%d)>' % [Type.keys()[type], pos.x, pos.y]
+	return 'ChessMove:<%s:(%d,%d)->(%d,%d)>' % [Type.keys()[type], from.x, from.y, to.x, to.y]
 
 
 func is_normal() -> bool:
