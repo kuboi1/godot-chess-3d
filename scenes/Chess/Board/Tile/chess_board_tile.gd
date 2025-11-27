@@ -1,11 +1,16 @@
 class_name ChessBoardTile
 extends Area3D
 
+
+signal start_hover(tile: ChessBoardTile)
+signal end_hover(tile: ChessBoardTile)
+signal clicked(tile: ChessBoardTile)
+
 @export_enum('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h') var position_x: String = 'a'
 @export_enum('1', '2', '3', '4', '5', '6', '7', '8') var position_y: String = '1'
 
-signal hovered(tile: ChessBoardTile)
-signal clicked(tile: ChessBoardTile)
+@onready var n_highlight_normal: MeshInstance3D = $HighlightNormal
+@onready var n_highlight_capture: MeshInstance3D = $HighlightCapture
 
 var chess_position: String
 var board_position: Vector2i
@@ -27,7 +32,8 @@ var piece: ChessPiece :
 				value.reparent(self)
 		
 		value.board_postion = board_position
-		value.hovered.connect(_on_piece_hovered)
+		value.start_hover.connect(_on_piece_start_hover)
+		value.end_hover.connect(_on_piece_end_hover)
 		value.clicked.connect(_on_piece_clicked)
 		
 		piece = value
@@ -35,6 +41,8 @@ var piece: ChessPiece :
 var move_valid: bool = false :
 	set(value):
 		move_valid = value
+
+var _highlighted: bool = false
 
 
 func _ready() -> void:
@@ -61,12 +69,29 @@ func has_piece() -> bool:
 
 
 func disconnect_piece() -> void:
-	piece.hovered.disconnect(_on_piece_hovered)
+	piece.start_hover.disconnect(_on_piece_start_hover)
+	piece.end_hover.disconnect(_on_piece_end_hover)
 	piece.clicked.disconnect(_on_piece_clicked)
 
 
-func _on_piece_hovered() -> void:
-	hovered.emit(self)
+func highlight(on: bool, is_capture: bool = false) -> void:
+	if on:
+		_highlighted = true
+		if is_capture:
+			n_highlight_capture.show()
+		else:
+			n_highlight_normal.show()
+	else:
+		n_highlight_normal.hide()
+		n_highlight_capture.hide()
+
+
+func _on_piece_start_hover() -> void:
+	start_hover.emit(self)
+
+
+func _on_piece_end_hover() -> void:
+	end_hover.emit(self)
 
 
 func _on_piece_clicked() -> void:
@@ -74,13 +99,11 @@ func _on_piece_clicked() -> void:
 
 
 func _on_mouse_entered() -> void:
-	# print('%s hovered' % self)
-	
-	hovered.emit(self)
+	start_hover.emit(self)
 
 
 func _on_mouse_exited() -> void:
-	pass # Replace with function body.
+	end_hover.emit(self)
 
 
 func _on_input_event(_camera: Node, event: InputEvent, _event_position: Vector3, _normal: Vector3, _shape_idx: int) -> void:

@@ -16,14 +16,16 @@ enum SpecialMove {
 	EN_PASSANT
 }
 
-signal hovered
+signal start_hover
+signal end_hover
 signal clicked
 
 @export var owner_player: ChessController.Player = ChessController.Player.WHITE
 @export var type: Type
 
-@onready var pre_white_mat: StandardMaterial3D = preload('res://scenes/Chess/Piece/assets/cp_white_material.tres')
-@onready var pre_black_mat: StandardMaterial3D = preload('res://scenes/Chess/Piece/assets/cp_black_material.tres')
+@onready var pre_white_mat: StandardMaterial3D = preload('res://scenes/Chess/Piece/assets/materials/cp_white_material.tres')
+@onready var pre_black_mat: StandardMaterial3D = preload('res://scenes/Chess/Piece/assets/materials/cp_black_material.tres')
+@onready var pre_select_mat: StandardMaterial3D = preload('res://scenes/Chess/Piece/assets/materials/cp_select_material.tres')
 
 @onready var n_mesh = $Mesh
 
@@ -31,13 +33,16 @@ var _movement_component: ChessPieceMovementComponent
 
 var board_postion: Vector2i
 
+var selected: bool = false :
+	set(value):
+		selected = value
+		n_mesh.material_overlay = pre_select_mat if selected else null
 var move_count: int :
 	get():
 		return _movement_component.move_count
 var last_move_idx: int :
 	get():
 		return _movement_component.last_move_idx
-
 
 func _ready() -> void:
 	var initialized = _init_piece()
@@ -86,14 +91,19 @@ func has_moved() -> bool:
 	return _movement_component.has_moved()
 
 
-func _on_mouse_entered() -> void:
-	# print('%s hovered' % self)
+func set_hover_effect(value: bool) -> void:
+	if selected:
+		return
 	
-	hovered.emit()
+	n_mesh.material_overlay = pre_select_mat if value else null
+
+
+func _on_mouse_entered() -> void:
+	start_hover.emit()
 
 
 func _on_mouse_exited() -> void:
-	pass # Replace with function body.
+	end_hover.emit()
 
 
 func _on_input_event(_camera: Node, event: InputEvent, _event_position: Vector3, _normal: Vector3, _shape_idx: int) -> void:

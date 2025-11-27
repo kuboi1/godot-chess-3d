@@ -1,7 +1,7 @@
 [gd_scene load_steps=5 format=3 uid="uid://dosodo6vnwnuh"]
 
 [ext_resource type="Script" uid="uid://djp7xbasad0cu" path="res://scenes/Chess/Piece/chess_piece.gd" id="1_x3v74"]
-[ext_resource type="Material" uid="uid://d2bu2ut2384uw" path="res://scenes/Chess/Piece/assets/cp_white_material.tres" id="2_dk8yh"]
+[ext_resource type="Material" uid="uid://d2bu2ut2384uw" path="res://scenes/Chess/Piece/assets/materials/cp_white_material.tres" id="2_dk8yh"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_x3v74"]
 material = ExtResource("2_dk8yh")

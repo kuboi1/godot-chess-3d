@@ -45,6 +45,12 @@ var _legal_moves: Array[ChessMove] = []
 
 
 func _ready() -> void:
+	n_camera.call_deferred(
+		'set_player', 
+		_current_player if game_type == GameType.LOCAL_MULTIPLAYER else player_color, 
+		true
+	)
+	
 	# Generate starting position if a generator is assigned and active
 	if starting_position_generator:
 		if starting_position_generator.active:
@@ -67,12 +73,6 @@ func _ready() -> void:
 		
 		if opponent_controller.player_color == Player.WHITE:
 			opponent_controller.request_move(_board_tiles, _move_idx)
-	
-	n_camera.call_deferred(
-		'set_player', 
-		_current_player if game_type == GameType.LOCAL_MULTIPLAYER else player_color, 
-		true
-	)
 	
 	# Safety check for positions starting with check/checkmate/stalemate
 	_check_for_game_over(_current_player)
@@ -110,20 +110,27 @@ func _select_piece_on_tile(tile: ChessBoardTile) -> void:
 	if tile.piece.owner_player != _current_player:
 		return
 	
+	var piece: ChessPiece = tile.piece
 	_legal_moves = tile.piece.get_legal_moves(_board_tiles, _move_idx)
-	print('[ChessController] %s legal moves: ' % tile.piece, _legal_moves)
+	print('[ChessController] %s legal moves: ' % piece, _legal_moves)
 	
 	# If piece currently has no legal moves, ignore
 	if _legal_moves.is_empty():
-		print('[ChessController] %s has no legal moves, not selecting' % tile.piece)
+		print('[ChessController] %s has no legal moves, not selecting' % piece)
 		return
 	
-	print('[ChessController] Selected: %s' % tile.piece)
+	print('[ChessController] Selected: %s' % piece)
+	
+	if _selected_piece_tile and _selected_piece_tile.has_piece():
+		_selected_piece_tile.piece.selected = false
+	
+	piece.selected = true
 	_piece_selected = true
 	_selected_piece_tile = tile
 
 
-func _deselect_piece() -> void:
+func _deselect_piece(piece: ChessPiece) -> void:
+	piece.selected = false
 	_piece_selected = false
 	_legal_moves = []
 
@@ -139,6 +146,7 @@ func _execute_chess_move(move: ChessMove) -> void:
 	var piece: ChessPiece = from_tile.piece
 	
 	_locked = true
+	to_tile.highlight(false)
 	
 	# Handle special moves
 	if not move.is_normal():
@@ -150,7 +158,7 @@ func _execute_chess_move(move: ChessMove) -> void:
 		if move.is_promotion():
 			# Free the pawn first and replace it with the promoted piece
 			piece.queue_free()
-			piece = _handle_pawn_promotion(move)
+			piece = _handle_pawn_promotion(move, piece.owner_player)
 		
 		if move.type == ChessMove.Type.CASTLE:
 			_execute_castle(move)
@@ -164,7 +172,7 @@ func _execute_chess_move(move: ChessMove) -> void:
 	# Check if the game is over for the opposing player after the move
 	_check_for_game_over(ChessUtils.get_opposing_player(_current_player))
 	
-	_deselect_piece()
+	_deselect_piece(piece)
 
 
 func _execute_castle(move: ChessMove) -> void:
@@ -205,10 +213,11 @@ func _execute_en_passant(move: ChessMove) -> void:
 	captured_piece.queue_free()
 
 
-func _handle_pawn_promotion(move: ChessMove) -> ChessPiece:
+func _handle_pawn_promotion(move: ChessMove, owner_player: Player) -> ChessPiece:
 	# TODO: Let the player promote to pieces other than the queen
 	# Replace the pawn on the selected tile with a promoted piece
 	var promoted_piece: ChessPiece = load('res://scenes/Chess/Piece/Types/Queen/queen.tscn').instantiate()
+	promoted_piece.owner_player = owner_player
 	_selected_piece_tile.piece = promoted_piece
 	return promoted_piece
 
@@ -280,8 +289,35 @@ func _on_chess_camera_animation_finished() -> void:
 	_locked = false
 
 
-func _on_chess_board_tile_hovered(tile: ChessBoardTile) -> void:
-	pass # Replace with function body.
+func _on_chess_board_tile_start_hover(tile: ChessBoardTile) -> void:
+	if _locked or _game_over:
+		return
+	
+	var legal_move_idx = _legal_moves.find_custom(func(move: ChessMove): return move.to == tile.board_position)
+	if legal_move_idx > -1:
+		var move: ChessMove = _legal_moves[legal_move_idx]
+		tile.highlight(true, move.is_capture())
+	
+	if tile.has_piece():
+		var piece = tile.piece
+		if game_type == GameType.VS_AI and piece.owner_player == player_color:
+			piece.set_hover_effect(true)
+		elif piece.owner_player == _current_player:
+			piece.set_hover_effect(true)
+
+
+func _on_chess_board_tile_end_hover(tile: ChessBoardTile) -> void:
+	if _locked or _game_over:
+		return
+	
+	tile.highlight(false)
+	
+	if tile.has_piece():
+		var piece = tile.piece
+		if game_type == GameType.VS_AI and piece.owner_player == player_color:
+			piece.set_hover_effect(false)
+		elif piece.owner_player == _current_player:
+			piece.set_hover_effect(false)
 
 
 func _on_chess_board_tile_clicked(tile: ChessBoardTile) -> void:
@@ -290,8 +326,9 @@ func _on_chess_board_tile_clicked(tile: ChessBoardTile) -> void:
 	
 	if _piece_selected:
 		if tile == _selected_piece_tile:
-			_deselect_piece()
-			print('[ChessController] Deselected: %s' % tile.piece)
+			var piece: ChessPiece = tile.piece
+			_deselect_piece(piece)
+			print('[ChessController] Deselected: %s' % piece)
 			return
 		
 		if tile.has_piece() and tile.piece.owner_player == _current_player:

@@ -62,7 +62,7 @@ func _run_test_sequence() -> void:
 	await get_tree().create_timer(0.2).timeout
 	
 	print("\n--- Test 5: Get Best Move (1000ms think time) ---")
-	engine.GetBestMove(1000)
+	engine.GetBestMove(1000, 20)
 	print("⏳ Waiting for best move calculation...")
 	# Result will be printed via signal callback
 
@@ -133,7 +133,7 @@ func _test_skill_level(level: int) -> void:
 	
 	await get_tree().create_timer(0.2).timeout
 	
-	engine.GetBestMove(2000)
+	engine.GetBestMove(2000, 20)
 	print("⏳ Calculating best move with 2 second think time...")
 	
 	await get_tree().create_timer(3.0).timeout

@@ -4,7 +4,8 @@ extends Node3D
 
 @onready var n_tile_container: Node3D = $Tiles
 
-signal tile_hovered(tile: ChessBoardTile)
+signal tile_start_hover(tile: ChessBoardTile)
+signal tile_end_hover(tile: ChessBoardTile)
 signal tile_clicked(tile: ChessBoardTile)
 
 # Array[Array[ChessBoardTile]]
@@ -17,7 +18,8 @@ func _ready() -> void:
 
 func _load_tiles() -> void:
 	for tile: ChessBoardTile in n_tile_container.get_children():
-		tile.hovered.connect(_on_tile_hovered)
+		tile.start_hover.connect(_on_tile_start_hover)
+		tile.end_hover.connect(_on_tile_end_hover)
 		tile.clicked.connect(_on_tile_clicked)
 		
 		if (tile.board_position.y + 1) > tiles.size():
@@ -26,8 +28,12 @@ func _load_tiles() -> void:
 			tiles[tile.board_position.y].append(tile)
 
 
-func _on_tile_hovered(tile: ChessBoardTile) -> void:
-	tile_hovered.emit(tile)
+func _on_tile_start_hover(tile: ChessBoardTile) -> void:
+	tile_start_hover.emit(tile)
+
+
+func _on_tile_end_hover(tile: ChessBoardTile) -> void:
+	tile_end_hover.emit(tile)
 
 
 func _on_tile_clicked(tile: ChessBoardTile) -> void:
