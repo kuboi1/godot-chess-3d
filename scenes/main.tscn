@@ -20,9 +20,8 @@ _fen_notation_position = "rn1qkbnr/pp3ppp/2bp4/8/8/2N2N2/PPP2PPP/R1BQKB1R"
 
 [node name="ChessOpponentComponent" parent="ChessController" instance=ExtResource("3_sugp2")]
 player_name = "Gustavo"
-skill_level = 5
-think_time_ms = 500
-search_depth = 10
+think_time_ms = 100
+search_depth = 2
 
 [node name="SpotLight3D" type="SpotLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 0.022792, 0.99974, 0, -0.99974, 0.022792, 0, 9.10203, 0)
