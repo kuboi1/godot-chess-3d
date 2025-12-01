@@ -87,12 +87,10 @@ func register_opponent(opponent: ChessOpponentComponent) -> void:
 	print('[ChessController] New opponent registered: %s' % chess_opponent)
 	chess_opponent = opponent
 	
-	opponent_controller.skill_level = opponent.skill_level
-	opponent_controller.think_time_ms = opponent.think_time_ms
-	opponent_controller.search_depth = opponent.search_depth
-	
 	if not opponent_controller.initialized:
 		await opponent_controller.initialize()
+	
+	opponent_controller.register_opponent(opponent)
 
 
 func _swap_player() -> void:
