@@ -16,6 +16,9 @@ public partial class StockfishEngine : Node
 	public delegate void BestMoveCalculatedEventHandler(string move, string ponder);
 
 	[Signal]
+	public delegate void CandidateMovesCalculatedEventHandler(Godot.Collections.Array candidates);
+
+	[Signal]
 	public delegate void InfoReceivedEventHandler(string info);
 
 	[Signal]
@@ -31,10 +34,13 @@ public partial class StockfishEngine : Node
 	private StreamReader _stderr;
 	private bool _isInitialized = false;
 	private bool _isReady = false;
-	
+
 	private bool _stockfishPrintOutput = true;
 	private int _defaultThinkTimeMs = 1000; // Default to 1 second
-	
+	private int _multiPV = 1; // Number of candidate moves to return (default 1 = only best)
+
+	// Stores candidate moves from MultiPV info lines
+	private System.Collections.Generic.Dictionary<int, Godot.Collections.Dictionary> _candidateMoves;
 
 	// === Engine Configuration ===
 	private string _enginePath;
@@ -338,13 +344,125 @@ public partial class StockfishEngine : Node
 
 			if (!string.IsNullOrEmpty(move))
 			{
+				// Emit traditional best move signal
 				CallDeferred(MethodName.EmitSignal, SignalName.BestMoveCalculated, move, ponder ?? "");
+
+				// If MultiPV is enabled, also emit candidate moves signal
+				if (_multiPV >= 1 && _candidateMoves != null && _candidateMoves.Count > 0)
+				{
+					// Convert to Godot array sorted by multipv index
+					var candidateArray = new Godot.Collections.Array();
+					for (int i = 1; i <= _multiPV; i++)
+					{
+						if (_candidateMoves.ContainsKey(i))
+						{
+							candidateArray.Add(_candidateMoves[i]);
+						}
+					}
+					CallDeferred(MethodName.EmitSignal, SignalName.CandidateMovesCalculated, candidateArray);
+				}
+
+				// Clear candidate moves for next calculation
+				_candidateMoves = null;
 			}
 		}
 		// Info output (search progress, evaluation, etc.)
-		else if (line.StartsWith(UCIProtocol.RESP_INFO) && _stockfishPrintOutput)
+		else if (line.StartsWith(UCIProtocol.RESP_INFO))
 		{
-			CallDeferred(MethodName.EmitSignal, SignalName.InfoReceived, line);
+			// Parse MultiPV info lines
+			if (_multiPV > 1)
+			{
+				ParseMultiPVInfo(line);
+			}
+
+			if (_stockfishPrintOutput)
+			{
+				CallDeferred(MethodName.EmitSignal, SignalName.InfoReceived, line);
+			}
+		}
+	}
+
+	/// <summary>
+	/// Parses an info line to extract MultiPV candidate move data.
+	/// Example: "info depth 20 multipv 1 score cp 42 pv e2e4 e7e5"
+	/// Example: "info depth 15 multipv 2 score mate 3 pv f3g5 h6g5"
+	/// </summary>
+	private void ParseMultiPVInfo(string line)
+	{
+		var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+		int multiPvIndex = -1;
+		int depth = -1;
+		int scoreCP = 0;
+		int scoreMate = 0;
+		bool hasScore = false;
+		string scoreType = "";
+		string pvMove = null;
+
+		// Parse the info line
+		for (int i = 0; i < parts.Length; i++)
+		{
+			if (parts[i] == "multipv" && i + 1 < parts.Length)
+			{
+				int.TryParse(parts[i + 1], out multiPvIndex);
+			}
+			else if (parts[i] == "depth" && i + 1 < parts.Length)
+			{
+				int.TryParse(parts[i + 1], out depth);
+			}
+			else if (parts[i] == "score" && i + 2 < parts.Length)
+			{
+				if (parts[i + 1] == "cp")
+				{
+					int.TryParse(parts[i + 2], out scoreCP);
+					scoreType = "cp";
+					hasScore = true;
+				}
+				else if (parts[i + 1] == "mate")
+				{
+					int.TryParse(parts[i + 2], out scoreMate);
+					scoreType = "mate";
+					hasScore = true;
+				}
+			}
+			else if (parts[i] == "pv" && i + 1 < parts.Length)
+			{
+				pvMove = parts[i + 1]; // First move of principal variation
+				break; // Stop after finding pv
+			}
+		}
+
+		// Only store if we have valid multiPV data
+		if (multiPvIndex > 0 && pvMove != null && hasScore)
+		{
+			// Initialize candidate moves dictionary if needed
+			if (_candidateMoves == null)
+			{
+				_candidateMoves = new System.Collections.Generic.Dictionary<int, Godot.Collections.Dictionary>();
+			}
+
+			// Create candidate move data with raw scores
+			// The GDScript layer will apply mate_vision normalization
+			var candidate = new Godot.Collections.Dictionary
+			{
+				{ "move", pvMove },
+				{ "multipv", multiPvIndex },
+				{ "depth", depth },
+				{ "score_type", scoreType }
+			};
+
+			// Store raw score value
+			if (scoreType == "mate")
+			{
+				candidate["score"] = scoreMate; // Raw mate distance (positive or negative)
+			}
+			else if (scoreType == "cp")
+			{
+				candidate["score"] = scoreCP; // Raw centipawn score
+			}
+
+			// Store or update candidate (later depths overwrite earlier ones)
+			_candidateMoves[multiPvIndex] = candidate;
 		}
 	}
 
@@ -476,6 +594,19 @@ public partial class StockfishEngine : Node
 		// Clamp level to valid range
 		level = Math.Clamp(level, 0, 20);
 		SendCommand(UCIProtocol.BuildSetOption(UCIProtocol.OPT_SKILL_LEVEL, level.ToString()));
+	}
+
+	/// <summary>
+	/// Sets MultiPV (number of candidate moves to analyze).
+	/// When MultiPV > 1, Stockfish will return multiple candidate moves with evaluations.
+	/// Results will be emitted via CandidateMovesCalculated signal.
+	/// </summary>
+	public void SetMultiPV(int count)
+	{
+		// Clamp to valid range (1-500, though typically 1-20 is reasonable)
+		count = Math.Clamp(count, 1, 500);
+		_multiPV = count;
+		SendCommand(UCIProtocol.BuildSetOption(UCIProtocol.OPT_MULTI_PV, count.ToString()));
 	}
 
 	/// <summary>
