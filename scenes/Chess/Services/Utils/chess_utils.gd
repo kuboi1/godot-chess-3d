@@ -9,9 +9,12 @@ enum CastlingRight {
 	BLACK_QUEENSIDE
 }
 
+const CHESS_FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+const CHESS_RANKS = ['1', '2', '3', '4', '5', '6', '7', '8']
+
 const CHESS_POSITIONS = {
-	'x': ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'],
-	'y': ['1', '2', '3', '4', '5', '6', '7', '8']
+	'x': CHESS_FILES,
+	'y': CHESS_RANKS
 }
 
 
@@ -114,6 +117,30 @@ static func uci_to_chess_move(uci_move: String, board_tiles: Array[Array]) -> Ch
 
 static func get_opposing_player(to_player: ChessController.Player) -> ChessController.Player:
 	return (
-		ChessController.Player.WHITE if to_player == ChessController.Player.BLACK 
+		ChessController.Player.WHITE if to_player == ChessController.Player.BLACK
 		else ChessController.Player.BLACK
 	)
+
+
+static func is_valid_uci(uci_move: String) -> bool:
+	# UCI move must be 4 or 5 characters (e.g., "e2e4" or "e7e8q")
+	if uci_move.length() < 4 or uci_move.length() > 5:
+		return false
+	
+	var from_file := uci_move[0]
+	var from_rank := uci_move[1]
+	if from_file not in CHESS_FILES or from_rank not in CHESS_RANKS:
+		return false
+	
+	var to_file := uci_move[2]
+	var to_rank := uci_move[3]
+	if to_file not in CHESS_FILES or to_rank not in CHESS_RANKS:
+		return false
+	
+	# If 5 characters, validate promotion piece
+	if uci_move.length() == 5:
+		var promotion := uci_move[4].to_lower()
+		if not promotion in ['q', 'r', 'b', 'n']:
+			return false
+	
+	return true

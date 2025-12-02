@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ChessOpening" load_steps=2 format=3 uid="uid://dx7mp2vk8qrla"]
+
+[ext_resource type="Script" uid="uid://nffv22vwjr10" path="res://scenes/Chess/Opponent/Component/Opening/chess_opening.gd" id="1_46hpl"]
+
+[resource]
+script = ExtResource("1_46hpl")
+side = 1
+hardcoded_moves = Array[String](["d7d6", "g8f6", "g7g6"])
+name = "Pirc Defense"
+metadata/_custom_type_script = "uid://nffv22vwjr10"
