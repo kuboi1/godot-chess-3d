@@ -47,6 +47,10 @@ var mate_vision: int = 5 :
 			return opponent.mate_vision
 		return mate_vision
 
+var _opening: ChessOpening
+var _opening_move_idx: int = 0
+var _is_in_opening: bool = false
+
 var _chess_engine: StockfishEngine
 
 
@@ -56,6 +60,12 @@ func initialize(engine_debug_mode: bool = false) -> void:
 
 func register_opponent(opponent_component: ChessOpponentComponent) -> void:
 	opponent = opponent_component
+	
+	_opening = opponent.pick_random_opening(player_color)
+	if _opening:
+		_opening_move_idx = 0
+		_is_in_opening = true
+		print('[ChessOpponentController] Opening %s will be played' % _opening)
 	
 	if not _chess_engine:
 		push_warning('Registered opponent before initializing opponent. Skill level was not registered')
@@ -96,17 +106,23 @@ func update_position(board_tiles: Array[Array], move_idx: int) -> void:
 
 
 func request_move(board_tiles: Array[Array], move_idx: int) -> void:
+	if _is_in_opening:
+		var opening_move: String = _opening.get_move(_opening_move_idx)
+		if ChessBoardUtils.is_uci_move_legal(opening_move, player_color, board_tiles, move_idx):
+			move_calculated.emit(opening_move)
+			_opening_move_idx += 1
+			_is_in_opening = _opening_move_idx < _opening.get_move_count()
+			if not _is_in_opening:
+				print('[ChessOpponentController] %s opening finished' % _opening)
+			return
+		
+		# If move is illegal get out of opening and calculate the move as usual
+		print('[ChessOpponentController] The next opening move %s is not legal -> skipping the rest of the %s opening' % [opening_move, _opening])
+		_is_in_opening = false
+	
 	update_position(board_tiles, move_idx)
 	_chess_engine.GetBestMove(think_time_ms, search_depth)
 	thinking_started.emit()
-
-
-func _on_engine_ready() -> void:
-	print('[ChessOpponentController] Stockfish engine ready')
-	initialized = true
-	
-	# Configure MultiPV for candidate move analysis
-	_chess_engine.SetMultiPV(candidate_moves)
 
 
 func _normalize_candidate_score(candidate: Dictionary) -> Dictionary:
@@ -217,6 +233,14 @@ func _select_weighted_move(candidates: Array) -> String:
 	# Fallback (shouldn't reach here)
 	push_warning('Could not calculate weighted best move from candidate moves. Weird...')
 	return candidates[0].get('move', '')
+
+
+func _on_engine_ready() -> void:
+	print('[ChessOpponentController] Stockfish engine ready')
+	initialized = true
+	
+	# Configure MultiPV for candidate move analysis
+	_chess_engine.SetMultiPV(candidate_moves)
 
 
 func _on_candidate_moves_calculated(candidates: Array) -> void:

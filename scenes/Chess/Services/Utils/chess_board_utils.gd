@@ -113,6 +113,57 @@ static func simulate_move(
 	return simulated_board
 
 
+static func is_move_legal(
+	move: ChessMove,
+	by_player: ChessController.Player,
+	board: Array[Array],
+	move_idx: int
+) -> bool:
+	if move == null:
+		return false
+	
+	# Check if from position is valid
+	if move.from.x < 0 or move.from.x >= board[0].size() or move.from.y < 0 or move.from.y >= board.size():
+		return false
+	
+	var from_tile = board[move.from.y][move.from.x]
+	
+	# Check if there's a piece at from position
+	if not from_tile.has_piece():
+		return false
+	
+	var piece: ChessPiece = from_tile.piece
+	
+	# Check if piece belongs to the player
+	if piece.owner_player != by_player:
+		return false
+	
+	var legal_moves := piece.get_legal_moves(board, move_idx)
+	
+	# Check if the requested move is in the piece's legal moves
+	for legal_move: ChessMove in legal_moves:
+		if legal_move.to == move.to:
+			return true
+	
+	return false
+
+
+static func is_uci_move_legal(
+	uci_move: String,
+	by_player: ChessController.Player,
+	board: Array[Array],
+	move_idx: int
+) -> bool:
+	# Convert UCI notation to ChessMove
+	var chess_move := ChessUtils.uci_to_chess_move(uci_move, board)
+	
+	# Check if conversion was successful
+	if chess_move == null:
+		return false
+	
+	return is_move_legal(chess_move, by_player, board, move_idx)
+
+
 # Lightweight object that mimics ChessBoardTile interface for simulation purposes
 class _SimulatedTile:
 	var piece: ChessPiece
