@@ -19,13 +19,14 @@ extends Node
 ## Intended to only push the engine towards the position so 1-4 moves should be enough
 @export var _openings: Array[ChessOpening] = []
 @export_range(0.0, 1.0, 0.05) var _use_openings_prob: float = 1.0
+@export_range(0.1, 2.0, 0.1) var opening_commitment: float = 1.0
 
 
 func _ready() -> void:
 	# Validate openings
 	if _has_openings():
 		for opening: ChessOpening in _openings:
-			for move: String in opening.hardcoded_moves:
+			for move: String in opening.moves:
 				if not ChessUtils.is_valid_uci(move):
 					push_error('Move %s in opening is not a valid UCI move! Disabling openings for this opponent' % move)
 					_openings = []

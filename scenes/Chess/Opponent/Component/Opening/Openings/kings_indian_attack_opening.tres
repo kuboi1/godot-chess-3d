@@ -4,6 +4,6 @@
 
 [resource]
 script = ExtResource("1_46hpl")
-hardcoded_moves = Array[String](["e2e4", "g1f3", "d2d3"])
+moves = Array[String](["e2e4", "g1f3", "d2d3"])
 name = "King's Indian Attack"
 metadata/_custom_type_script = "uid://nffv22vwjr10"

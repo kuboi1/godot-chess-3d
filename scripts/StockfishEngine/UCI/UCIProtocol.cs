@@ -44,6 +44,7 @@ namespace chess3d.StockfishEngine.UCI
 		public const string GO_BTIME = "btime";
 		public const string GO_WINC = "winc";
 		public const string GO_BINC = "binc";
+		public const string GO_SEARCH_MOVES = "searchmoves";
 
 		/// <summary>
 		/// Builds a "position" command with FEN notation.
@@ -93,6 +94,39 @@ namespace chess3d.StockfishEngine.UCI
 			if (moveTimeMs <= 0 && depth <= 0)
 			{
 				command += $" {GO_INFINITE}";
+			}
+
+			return command;
+		}
+
+		/// <summary>
+		/// Builds a "go" command with searchmoves parameter to evaluate only specific moves.
+		/// Pass -1 to omit time/depth limits.
+		/// </summary>
+		public static string BuildGoWithSearchMoves(int moveTimeMs = -1, int depth = -1, string[] searchMoves = null)
+		{
+			var command = CMD_GO;
+
+			if (moveTimeMs > 0)
+			{
+				command += $" {GO_MOVE_TIME} {moveTimeMs}";
+			}
+
+			if (depth > 0)
+			{
+				command += $" {GO_DEPTH} {depth}";
+			}
+
+			// If no parameters specified, default to infinite search
+			if (moveTimeMs <= 0 && depth <= 0)
+			{
+				command += $" {GO_INFINITE}";
+			}
+
+			// Add searchmoves if provided
+			if (searchMoves != null && searchMoves.Length > 0)
+			{
+				command += $" {GO_SEARCH_MOVES} {string.Join(" ", searchMoves)}";
 			}
 
 			return command;

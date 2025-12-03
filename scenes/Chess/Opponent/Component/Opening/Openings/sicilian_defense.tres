@@ -5,6 +5,6 @@
 [resource]
 script = ExtResource("1_46hpl")
 side = 1
-hardcoded_moves = Array[String](["c7c5", "d7d6"])
+moves = Array[String](["c7c5", "d7d6"])
 name = "Sicilian Defense"
 metadata/_custom_type_script = "uid://nffv22vwjr10"

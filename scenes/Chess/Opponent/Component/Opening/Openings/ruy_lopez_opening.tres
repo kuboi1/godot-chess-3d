@@ -5,6 +5,6 @@
 [resource]
 script = ExtResource("1_46hpl")
 side = 0
-hardcoded_moves = Array[String](["e2e4", "g1f3", "f1b5"])
+moves = Array[String](["e2e4", "g1f3", "f1b5"])
 name = "Ruy Lopez"
 metadata/_custom_type_script = "uid://nffv22vwjr10"
