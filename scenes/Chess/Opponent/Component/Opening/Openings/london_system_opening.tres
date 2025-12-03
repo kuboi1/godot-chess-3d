@@ -5,6 +5,6 @@
 [resource]
 script = ExtResource("1_46hpl")
 side = 0
-hardcoded_moves = Array[String](["d2d4", "g1f3", "c1f4"])
+moves = Array[String](["d2d4", "g1f3", "c1f4"])
 name = "London System"
 metadata/_custom_type_script = "uid://nffv22vwjr10"

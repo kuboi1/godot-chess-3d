@@ -26,6 +26,7 @@ player_name = "Gustavo"
 skill_level = 0
 think_time_ms = 100
 search_depth = 10
+candidate_moves = 10
 move_randomness = 1.5
 mate_vision = 1
 _openings = Array[ExtResource("4_tbgi4")]([ExtResource("5_tefeu"), ExtResource("6_tefeu"), ExtResource("7_o6xl0")])

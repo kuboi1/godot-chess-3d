@@ -4,6 +4,9 @@ extends Node
 
 const CANDIDATE_SCORE_CP = 'cp'
 const CANDIDATE_SCORE_MATE = 'mate'
+const OPENING_VALIDATION_TIME_MS: int = 100
+const OPENING_VALIDATION_DEPTH: int = 10
+const OPENING_MAX_CP_LOSS: int = 200
 
 signal thinking_started
 signal move_calculated(uci_move: String)
@@ -41,15 +44,22 @@ var move_randomness: float = 0.5 :
 		if opponent:
 			return opponent.move_randomness
 		return move_randomness
-var mate_vision: int = 5 : 
+var mate_vision: int = 5 :
 	get():
 		if opponent:
 			return opponent.mate_vision
 		return mate_vision
+var opening_commitment: float = 1.0 :
+	get():
+		if opponent:
+			return opponent.opening_commitment
+		return opening_commitment
 
 var _opening: ChessOpening
 var _opening_move_idx: int = 0
 var _is_in_opening: bool = false
+var _opening_move_requested: bool = false
+var _pending_opening_move: String
 
 var _chess_engine: StockfishEngine
 
@@ -71,6 +81,7 @@ func register_opponent(opponent_component: ChessOpponentComponent) -> void:
 		push_warning('Registered opponent before initializing opponent. Skill level was not registered')
 	
 	_chess_engine.SetSkillLevel(skill_level)
+	_chess_engine.SetMultiPV(candidate_moves)
 	
 	print('[ChessOpponentController] Opponent registered: SkillLevel=%d, ThinkTimeMS=%d, SearchDepth=%d, MultiPV=%d, Randomness=%.2f, MateVision=%d' % [
 		skill_level, think_time_ms, search_depth, candidate_moves, move_randomness, mate_vision
@@ -106,23 +117,51 @@ func update_position(board_tiles: Array[Array], move_idx: int) -> void:
 
 
 func request_move(board_tiles: Array[Array], move_idx: int) -> void:
+	update_position(board_tiles, move_idx)
+	
 	if _is_in_opening:
 		var opening_move: String = _opening.get_move(_opening_move_idx)
-		if ChessBoardUtils.is_uci_move_legal(opening_move, player_color, board_tiles, move_idx):
-			move_calculated.emit(opening_move)
-			_opening_move_idx += 1
-			_is_in_opening = _opening_move_idx < _opening.get_move_count()
-			if not _is_in_opening:
-				print('[ChessOpponentController] %s opening finished' % _opening)
+		if not ChessBoardUtils.is_uci_move_legal(opening_move, player_color, board_tiles, move_idx):
+			_exit_opening_prematurely('Opening move %s is not legal' % opening_move)
 			return
 		
-		# If move is illegal get out of opening and calculate the move as usual
-		print('[ChessOpponentController] The next opening move %s is not legal -> skipping the rest of the %s opening' % [opening_move, _opening])
-		_is_in_opening = false
+		# Validate opening move by evaluating it directly
+		_request_opening_move(opening_move)
+		return
 	
-	update_position(board_tiles, move_idx)
 	_chess_engine.GetBestMove(think_time_ms, search_depth)
 	thinking_started.emit()
+
+
+func _request_opening_move(uci_move: String) -> void:
+	_opening_move_requested = true
+	_pending_opening_move = uci_move
+	
+	# Evaluate ONLY this specific opening move to get its score
+	_chess_engine.GetBestMoveWithSearchMoves(
+		OPENING_VALIDATION_TIME_MS,
+		OPENING_VALIDATION_DEPTH,
+		[uci_move]
+	)
+	thinking_started.emit()
+
+
+func _make_opening_move(uci_move: String) -> void:
+	move_calculated.emit(uci_move)
+	_opening_move_idx += 1
+	_is_in_opening = _opening_move_idx < _opening.get_move_count()
+	if not _is_in_opening:
+		print('[ChessOpponentController] %s opening finished' % _opening)
+
+
+func _exit_opening_prematurely(reason: String = 'Opening is not ideal', call_engine: bool = true) -> void:
+	print('[ChessOpponentController] %s -> exiting %s opening' % [reason, _opening])
+	_is_in_opening = false
+	
+	if call_engine:
+		# Position already synced in request_move(), just get engine move
+		_chess_engine.GetBestMove(think_time_ms, search_depth)
+		thinking_started.emit()
 
 
 func _normalize_candidate_score(candidate: Dictionary) -> Dictionary:
@@ -238,17 +277,44 @@ func _select_weighted_move(candidates: Array) -> String:
 func _on_engine_ready() -> void:
 	print('[ChessOpponentController] Stockfish engine ready')
 	initialized = true
-	
-	# Configure MultiPV for candidate move analysis
-	_chess_engine.SetMultiPV(candidate_moves)
 
 
 func _on_candidate_moves_calculated(candidates: Array) -> void:
 	if candidates.size() == 0:
 		push_error('No candidate moves received from engine')
+		# Reset validation flag if we were validating
+		if _opening_move_requested:
+			_opening_move_requested = false
+			_exit_opening_prematurely('Engine returned no candidates', false)
 		return
 	
-	# Normalize scores with mate_vision
+	# Validate opening move if requested
+	if _opening_move_requested:
+		_opening_move_requested = false
+		
+		var opening_score: int = candidates[0].get('score', 0)
+		var score_type: String = candidates[0].get('score_type', CANDIDATE_SCORE_CP)
+		print(candidates)
+		
+		if score_type == CANDIDATE_SCORE_MATE:
+			if opening_score > 0:
+				_make_opening_move(_pending_opening_move)
+			else:
+				_exit_opening_prematurely('Opening move %s leads to mate against the opponent' % _pending_opening_move)
+		else:
+			var max_loss_threshold: int = int(OPENING_MAX_CP_LOSS * opening_commitment)
+			if opening_score < -max_loss_threshold:
+				# Opening move loses too much material
+				_exit_opening_prematurely(
+					'Opening move %s loses %dcp (threshold: %dcp)' % [_pending_opening_move, abs(opening_score), max_loss_threshold]
+				)
+			else:
+				# Score is acceptable, play the opening move
+				_make_opening_move(_pending_opening_move)
+		
+		return
+	
+	# Normal engine move selection (used when not in opening OR opening validation failed)
 	var normalized_candidates: Array = []
 	for candidate in candidates:
 		var normalized = _normalize_candidate_score(candidate)

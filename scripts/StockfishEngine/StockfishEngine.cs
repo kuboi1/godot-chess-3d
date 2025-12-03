@@ -587,6 +587,18 @@ public partial class StockfishEngine : Node
 	}
 
 	/// <summary>
+	/// Requests evaluation of specific moves only using the searchmoves parameter.
+	/// This forces Stockfish to ONLY analyze the provided moves, returning their scores.
+	/// Useful for validating specific opening book moves.
+	/// Result will be emitted via BestMoveCalculated and CandidateMovesCalculated signals.
+	/// </summary>
+	public void GetBestMoveWithSearchMoves(int thinkTimeMs = -1, int depth = -1, string[] searchMoves = null)
+	{
+		int finalThinkTime = thinkTimeMs >= 1 ? thinkTimeMs : _defaultThinkTimeMs;
+		SendCommand(UCIProtocol.BuildGoWithSearchMoves(finalThinkTime, depth, searchMoves));
+	}
+
+	/// <summary>
 	/// Sets the Stockfish skill level (0-20, where 20 is maximum strength).
 	/// </summary>
 	public void SetSkillLevel(int level)
