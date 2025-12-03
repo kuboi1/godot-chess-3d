@@ -4,6 +4,6 @@
 
 [resource]
 script = ExtResource("1_46hpl")
-moves = Array[String](["d2d4", "c2c4"])
+moves = Array[String](["d2d4", "c2c4", "g1f3", "b1c3", "c1f4", "e2e3"])
 name = "Queen's Gambit"
 metadata/_custom_type_script = "uid://nffv22vwjr10"

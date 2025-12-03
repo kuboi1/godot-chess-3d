@@ -5,6 +5,6 @@
 [resource]
 script = ExtResource("1_46hpl")
 side = 1
-moves = Array[String](["d7d6", "g8f6", "g7g6"])
+moves = Array[String](["d7d6", "g8f6", "g7g6", "f8g7", "e8g8", "b8d7"])
 name = "Pirc Defense"
 metadata/_custom_type_script = "uid://nffv22vwjr10"
