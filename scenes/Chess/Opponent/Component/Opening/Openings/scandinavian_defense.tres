@@ -1,10 +1,10 @@
-[gd_resource type="Resource" script_class="ChessOpening" load_steps=2 format=3 uid="uid://dtk3np8vq5rla"]
+[gd_resource type="Resource" script_class="ChessOpening" load_steps=2 format=3 uid="uid://dsn8vh3j2xkpa"]
 
 [ext_resource type="Script" uid="uid://nffv22vwjr10" path="res://scenes/Chess/Opponent/Component/Opening/chess_opening.gd" id="1_46hpl"]
 
 [resource]
 script = ExtResource("1_46hpl")
-side = 0
-moves = Array[String](["e2e4", "g1f3", "f1b5", "b5a4", "e1g1", "f1e1"])
-name = "Ruy Lopez"
+side = 1
+moves = Array[String](["d7d5", "d8d5", "d5a5", "g8f6", "c7c6", "b8d7"])
+name = "Scandinavian Defense"
 metadata/_custom_type_script = "uid://nffv22vwjr10"

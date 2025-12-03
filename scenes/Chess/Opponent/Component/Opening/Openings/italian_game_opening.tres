@@ -5,6 +5,6 @@
 [resource]
 script = ExtResource("1_46hpl")
 side = 0
-moves = Array[String](["e2e4", "g1f3", "f1c4"])
+moves = Array[String](["e2e4", "g1f3", "f1c4", "c2c3", "d2d4", "b1d2"])
 name = "Italian Game"
 metadata/_custom_type_script = "uid://nffv22vwjr10"
