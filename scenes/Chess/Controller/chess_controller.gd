@@ -14,6 +14,7 @@ enum Player {
 signal check(by_player: Player)
 signal checkmate(by_player: Player)
 signal stalemate
+signal promotion_requested(position: Vector2i, player: Player)
 
 @export_category('Config')
 @export var game_type: GameType = GameType.LOCAL_MULTIPLAYER
@@ -42,6 +43,11 @@ var _piece_selected := false
 var _selected_piece_tile: ChessBoardTile
 
 var _legal_moves: Array[ChessMove] = []
+
+var _pending_promotion_move: ChessMove
+var _pending_promotion_from_tile: ChessBoardTile
+var _pending_promotion_to_tile: ChessBoardTile
+var _pending_promotion_player: Player
 
 
 func _ready() -> void:
@@ -91,6 +97,32 @@ func register_opponent(opponent: ChessOpponentComponent) -> void:
 		await opponent_controller.initialize()
 	
 	opponent_controller.register_opponent(opponent)
+
+
+func complete_promotion(piece_type: ChessPiece.Type) -> void:
+	if not _pending_promotion_move:
+		push_error('complete_promotion() called but no pending promotion!')
+		return
+	
+	print('[ChessController] Completing promotion to %s' % ChessPiece.Type.keys()[piece_type])
+	
+	# Free the pawn
+	if _selected_piece_tile.has_piece():
+		_selected_piece_tile.piece.queue_free()
+	
+	# Create the promoted piece
+	var promoted_piece := _create_promoted_piece(piece_type, _pending_promotion_player)
+	
+	# Place the piece on the selected tile it will get moved in _finalize_move
+	_selected_piece_tile.piece = promoted_piece
+	
+	# Finalize the move
+	_finalize_move(promoted_piece, _pending_promotion_from_tile, _pending_promotion_to_tile)
+	
+	# Clear pending promotion state
+	_pending_promotion_move = null
+	_pending_promotion_from_tile = null
+	_pending_promotion_to_tile = null
 
 
 func _swap_player() -> void:
@@ -154,9 +186,21 @@ func _execute_chess_move(move: ChessMove) -> void:
 			to_tile.piece.queue_free()
 		
 		if move.is_promotion():
-			# Free the pawn first and replace it with the promoted piece
-			piece.queue_free()
-			piece = _handle_pawn_promotion(move, piece.owner_player)
+			# Check if this is AI promotion or has promotion piece in metadata
+			if move.metadata.has('promotion_piece'):
+				# AI move - use the piece from metadata
+				var piece_type: ChessPiece.Type = _promotion_char_to_piece_type(move.metadata.promotion_piece)
+				var promoted_piece: ChessPiece = _create_promoted_piece(piece_type, piece.owner_player)
+				to_tile.piece = promoted_piece
+				piece.queue_free()
+			else:
+				# Player move - request UI selection
+				_pending_promotion_move = move
+				_pending_promotion_from_tile = from_tile
+				_pending_promotion_to_tile = to_tile
+				_pending_promotion_player = piece.owner_player
+				promotion_requested.emit(move.to, piece.owner_player)
+				return  # Wait for complete_promotion() call
 		
 		if move.type == ChessMove.Type.CASTLE:
 			_execute_castle(move)
@@ -164,6 +208,10 @@ func _execute_chess_move(move: ChessMove) -> void:
 		if move.type == ChessMove.Type.EN_PASSANT:
 			_execute_en_passant(move)
 	
+	_finalize_move(piece, from_tile, to_tile)
+
+
+func _finalize_move(piece: ChessPiece, from_tile: ChessBoardTile, to_tile: ChessBoardTile) -> void:
 	_move_piece(piece, from_tile, to_tile, true)
 	_move_idx += 1
 	
@@ -211,12 +259,38 @@ func _execute_en_passant(move: ChessMove) -> void:
 	captured_piece.queue_free()
 
 
-func _handle_pawn_promotion(move: ChessMove, owner_player: Player) -> ChessPiece:
-	# TODO: Let the player promote to pieces other than the queen
-	# Replace the pawn on the selected tile with a promoted piece
-	var promoted_piece: ChessPiece = load('res://scenes/Chess/Piece/Types/Queen/queen.tscn').instantiate()
+func _promotion_char_to_piece_type(promotion_char: String) -> ChessPiece.Type:
+	match promotion_char.to_lower():
+		'q':
+			return ChessPiece.Type.QUEEN
+		'r':
+			return ChessPiece.Type.ROOK
+		'b':
+			return ChessPiece.Type.BISHOP
+		'n':
+			return ChessPiece.Type.KNIGHT
+		_:
+			push_warning('Unknown promotion character "%s", defaulting to Queen' % promotion_char)
+			return ChessPiece.Type.QUEEN
+
+
+func _create_promoted_piece(piece_type: ChessPiece.Type, owner_player: Player) -> ChessPiece:
+	var scene_path: String
+	match piece_type:
+		ChessPiece.Type.QUEEN:
+			scene_path = 'res://scenes/Chess/Piece/Types/Queen/queen.tscn'
+		ChessPiece.Type.ROOK:
+			scene_path = 'res://scenes/Chess/Piece/Types/Rook/rook.tscn'
+		ChessPiece.Type.BISHOP:
+			scene_path = 'res://scenes/Chess/Piece/Types/Bishop/bishop.tscn'
+		ChessPiece.Type.KNIGHT:
+			scene_path = 'res://scenes/Chess/Piece/Types/Knight/knight.tscn'
+		_:
+			push_error('Cannot promote to piece type: %s' % ChessPiece.Type.keys()[piece_type])
+			scene_path = 'res://scenes/Chess/Piece/Types/Queen/queen.tscn'
+	
+	var promoted_piece: ChessPiece = load(scene_path).instantiate()
 	promoted_piece.owner_player = owner_player
-	_selected_piece_tile.piece = promoted_piece
 	return promoted_piece
 
 
