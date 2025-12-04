@@ -50,6 +50,21 @@ static func is_king_in_check(
 	)
 
 
+static func is_insufficient_material(board: Array[Array]) -> bool:
+	var piece_count := 0
+	var king_count := 0
+	
+	for row in board:
+		for tile: ChessBoardTile in row:
+			if tile.has_piece():
+				piece_count += 1
+				if tile.piece.type == ChessPiece.Type.KING:
+					king_count += 1
+	
+	# Only kings remaining
+	return piece_count == 2 and king_count == 2
+
+
 static func player_has_legal_moves(
 	player: ChessController.Player, 
 	board: Array[Array], 

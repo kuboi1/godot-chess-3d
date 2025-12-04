@@ -14,6 +14,7 @@ enum Player {
 signal check(by_player: Player)
 signal checkmate(by_player: Player)
 signal stalemate
+signal draw
 signal promotion_requested(position: Vector2i, player: Player)
 
 @export_category('Config')
@@ -320,10 +321,17 @@ func _move_piece(
 
 
 func _check_for_game_over(for_player: Player) -> void:
+	# Check for insufficient material (only kings remaining)
+	if ChessBoardUtils.is_insufficient_material(_board_tiles):
+		_game_over = true
+		print('[ChessController] DRAW - Insufficient material (only kings remaining)')
+		draw.emit()
+		return
+	
 	# Check if the player is in check and if they have a legal move left
 	var is_player_in_check := ChessBoardUtils.is_king_in_check(
-		for_player, 
-		_board_tiles, 
+		for_player,
+		_board_tiles,
 		_move_idx
 	)
 	var player_has_legal_moves := ChessBoardUtils.player_has_legal_moves(
