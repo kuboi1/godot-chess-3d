@@ -3,7 +3,6 @@ extends Resource
 
 
 @export var side: ChessController.Player
-## Intended to only push the engine towards the position so 1-4 moves should be enough
 @export var moves: Array[String] = []
 @export var name: String = ''
 

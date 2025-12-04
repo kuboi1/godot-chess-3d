@@ -36,7 +36,7 @@ static func chess_position_to_board_position(notation_str: String) -> Vector2i:
 static func uci_to_chess_move(uci_move: String, board_tiles: Array[Array]) -> ChessMove:
 	# Parse UCI format: "e2e4" (normal), "e7e8q" (promotion to queen), etc.
 	if uci_move.length() < 4:
-		push_error('UCI move must be at least 4 characters (e.g., e2e4), got: %s' % uci_move)
+		push_warning('UCI move must be at least 4 characters (e.g., e2e4), got: %s' % uci_move)
 		return null
 	
 	# Extract from and to positions
@@ -48,7 +48,7 @@ static func uci_to_chess_move(uci_move: String, board_tiles: Array[Array]) -> Ch
 	
 	# Validate positions
 	if from_pos == Vector2i(-1, -1) or to_pos == Vector2i(-1, -1):
-		push_error('Invalid UCI move positions: %s' % uci_move)
+		push_warning('Invalid UCI move positions: %s' % uci_move)
 		return null
 	
 	# Get tiles
@@ -56,7 +56,7 @@ static func uci_to_chess_move(uci_move: String, board_tiles: Array[Array]) -> Ch
 	var to_tile: ChessBoardTile = board_tiles[to_pos.y][to_pos.x]
 	
 	if not from_tile.has_piece():
-		push_error('No piece at from position %s in UCI move: %s' % [from_notation, uci_move])
+		push_warning('No piece at from position %s in UCI move: %s' % [from_notation, uci_move])
 		return null
 	
 	var piece: ChessPiece = from_tile.piece
@@ -74,7 +74,7 @@ static func uci_to_chess_move(uci_move: String, board_tiles: Array[Array]) -> Ch
 		if rook_tile.has_piece() and rook_tile.piece.type == ChessPiece.Type.ROOK:
 			metadata.rook = rook_tile.piece
 		else:
-			push_error('Castling move but no rook found: %s' % uci_move)
+			push_warning('Castling move but no rook found: %s' % uci_move)
 			return null
 	
 	# Check for pawn special moves
@@ -101,7 +101,7 @@ static func uci_to_chess_move(uci_move: String, board_tiles: Array[Array]) -> Ch
 			if captured_pawn_tile.has_piece() and captured_pawn_tile.piece.type == ChessPiece.Type.PAWN:
 				metadata.captured_piece = captured_pawn_tile.piece
 			else:
-				push_error('En passant move but no pawn found to capture: %s' % uci_move)
+				push_warning('En passant move but no pawn found to capture: %s' % uci_move)
 				return null
 		
 		# Regular pawn capture
