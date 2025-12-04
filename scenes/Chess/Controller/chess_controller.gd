@@ -11,12 +11,6 @@ enum Player {
 	BLACK
 }
 
-signal check(by_player: Player)
-signal checkmate(by_player: Player)
-signal stalemate
-signal draw
-signal promotion_requested(position: Vector2i, player: Player)
-
 @export_category('Config')
 @export var game_type: GameType = GameType.LOCAL_MULTIPLAYER
 @export_subgroup('VS AI')
@@ -25,6 +19,7 @@ signal promotion_requested(position: Vector2i, player: Player)
 @export_category('Nodes')
 @export var starting_position_generator: ChessStartingPositionGenerator
 @export var chess_opponent: ChessOpponentComponent
+@export var chess_signal_bus: ChessSignalBus
 
 @onready var opponent_controller: ChessOpponentController = $ChessOpponentController
 @onready var n_board: ChessBoard = $ChessBoard
@@ -46,15 +41,23 @@ var _selected_piece_tile: ChessBoardTile
 var _legal_moves: Array[ChessMove] = []
 
 var _pending_promotion_move: ChessMove
-var _pending_promotion_from_tile: ChessBoardTile
-var _pending_promotion_to_tile: ChessBoardTile
 var _pending_promotion_player: Player
 
 
 func _ready() -> void:
+	# Validate signal bus is set
+	if not chess_signal_bus:
+		push_error('ChessController requires chess_signal_bus to be set!')
+		return
+	
+	# Connect to signal bus commands
+	chess_signal_bus.promote.connect(_on_signal_bus_promote)
+	chess_signal_bus.next_move.connect(_on_signal_bus_next_move)
+	chess_signal_bus.move_animation_completed.connect(_on_signal_bus_move_animation_completed)
+	
 	n_camera.call_deferred(
-		'set_player', 
-		_current_player if game_type == GameType.LOCAL_MULTIPLAYER else player_color, 
+		'set_player',
+		_current_player if game_type == GameType.LOCAL_MULTIPLAYER else player_color,
 		true
 	)
 	
@@ -83,6 +86,14 @@ func _ready() -> void:
 	
 	# Safety check for positions starting with check/checkmate/stalemate
 	_check_for_game_over(_current_player)
+	
+	# Emit game started event
+	var metadata := {
+		"game_type": game_type,
+		"player_color": player_color if game_type == GameType.VS_AI else -1,
+		"starting_player": _current_player
+	}
+	chess_signal_bus.game_started.emit(metadata)
 
 
 func _input(event: InputEvent) -> void:
@@ -100,34 +111,40 @@ func register_opponent(opponent: ChessOpponentComponent) -> void:
 	opponent_controller.register_opponent(opponent)
 
 
-func complete_promotion(piece_type: ChessPiece.Type) -> void:
+func _on_signal_bus_promote(to_piece: ChessPiece.Type) -> void:
 	if not _pending_promotion_move:
-		push_error('complete_promotion() called but no pending promotion!')
+		push_error('Promotion signal received but no pending promotion!')
 		return
 	
-	print('[ChessController] Completing promotion to %s' % ChessPiece.Type.keys()[piece_type])
+	print('[ChessController] Completing promotion to %s' % ChessPiece.Type.keys()[to_piece])
 	
 	# Free the pawn
 	if _selected_piece_tile.has_piece():
 		_selected_piece_tile.piece.queue_free()
 	
 	# Create the promoted piece
-	var promoted_piece := _create_promoted_piece(piece_type, _pending_promotion_player)
+	var promoted_piece := _create_promoted_piece(to_piece, _pending_promotion_player)
 	
 	# Place the piece on the selected tile it will get moved in _finalize_move
 	_selected_piece_tile.piece = promoted_piece
 	
 	# Finalize the move
-	_finalize_move(promoted_piece, _pending_promotion_from_tile, _pending_promotion_to_tile)
+	_finalize_move(_pending_promotion_move, promoted_piece)
 	
 	# Clear pending promotion state
 	_pending_promotion_move = null
-	_pending_promotion_from_tile = null
-	_pending_promotion_to_tile = null
+
+
+func _on_signal_bus_next_move() -> void:
+	if not _game_over:
+		_swap_player()
 
 
 func _swap_player() -> void:
 	_current_player = Player.BLACK if _current_player == Player.WHITE else Player.WHITE
+	
+	# Emit player swapped event
+	chess_signal_bus.player_swapped.emit(_current_player)
 	
 	if game_type == GameType.LOCAL_MULTIPLAYER:
 		n_camera.set_player(_current_player)
@@ -182,9 +199,11 @@ func _execute_chess_move(move: ChessMove) -> void:
 	# Handle special moves
 	if not move.is_normal():
 		if move.is_capture():
-			# TODO: Capture animation
-			print('[ChessController] CAPTURE: %s x %s' % [piece, to_tile.piece])
-			to_tile.piece.queue_free()
+			# Emit piece captured event and request capture animation
+			var captured_piece = to_tile.piece
+			chess_signal_bus.piece_captured.emit(captured_piece, to_tile)
+			chess_signal_bus.capture_animation_requested.emit(captured_piece, to_tile)
+			print('[ChessController] CAPTURE: %s x %s' % [piece, captured_piece])
 		
 		if move.is_promotion():
 			# Check if this is AI promotion or has promotion piece in metadata
@@ -197,24 +216,31 @@ func _execute_chess_move(move: ChessMove) -> void:
 			else:
 				# Player move - request UI selection
 				_pending_promotion_move = move
-				_pending_promotion_from_tile = from_tile
-				_pending_promotion_to_tile = to_tile
 				_pending_promotion_player = piece.owner_player
-				promotion_requested.emit(move.to, piece.owner_player)
-				return  # Wait for complete_promotion() call
-		
-		if move.type == ChessMove.Type.CASTLE:
-			_execute_castle(move)
+				chess_signal_bus.promotion_requested.emit(move.to, piece.owner_player)
+				return  # Wait for promotion signal from bus
 		
 		if move.type == ChessMove.Type.EN_PASSANT:
 			_execute_en_passant(move)
 	
-	_finalize_move(piece, from_tile, to_tile)
+	_finalize_move(move, piece)
 
 
-func _finalize_move(piece: ChessPiece, from_tile: ChessBoardTile, to_tile: ChessBoardTile) -> void:
-	_move_piece(piece, from_tile, to_tile, true)
+func _finalize_move(move: ChessMove, piece: ChessPiece) -> void:
+	var from_tile: ChessBoardTile = _board_tiles[move.from.y][move.from.x]
+	var to_tile: ChessBoardTile = _board_tiles[move.to.y][move.to.x]
+	
+	# Move the main piece (king for castling) and request animation
+	_move_piece(piece, from_tile, to_tile)
+	
+	# If castling, move the rook after the king
+	if move.type == ChessMove.Type.CASTLE:
+		_execute_castle(move)
+	
 	_move_idx += 1
+	
+	# Emit move executed event
+	chess_signal_bus.move_executed.emit(move, piece.owner_player)
 	
 	# Check if the game is over for the opposing player after the move
 	_check_for_game_over(ChessUtils.get_opposing_player(_current_player))
@@ -245,7 +271,7 @@ func _execute_castle(move: ChessMove) -> void:
 	var rook_destination: Vector2i = Vector2i(rook_destination_x, move.to.y)
 	var rook_destination_tile: ChessBoardTile = _board_tiles[rook_destination.y][rook_destination.x]
 	
-	_move_piece(rook_piece, rook_tile, rook_destination_tile, false)
+	_move_piece(rook_piece, rook_tile, rook_destination_tile)
 
 
 func _execute_en_passant(move: ChessMove) -> void:
@@ -256,8 +282,11 @@ func _execute_en_passant(move: ChessMove) -> void:
 	print('[ChessController] EN PASSANT')
 	
 	var captured_piece: ChessPiece = move.metadata.captured_piece
-	# TODO: Capture animation
-	captured_piece.queue_free()
+	var captured_piece_pos: Vector2i = captured_piece.board_position
+	var captured_piece_tile: ChessBoardTile = _board_tiles[captured_piece_pos.y][captured_piece_pos.x]
+	
+	# Request capture animation
+	chess_signal_bus.capture_animation_requested.emit(captured_piece, captured_piece_tile)
 
 
 func _promotion_char_to_piece_type(promotion_char: String) -> ChessPiece.Type:
@@ -297,10 +326,8 @@ func _create_promoted_piece(piece_type: ChessPiece.Type, owner_player: Player) -
 
 func _move_piece(
 	piece: ChessPiece,
-	from_tile: ChessBoardTile, 
-	to_tile: ChessBoardTile,
-	signal_anim_end: bool,
-	anim_duration: float = 0.3
+	from_tile: ChessBoardTile,
+	to_tile: ChessBoardTile
 ) -> void:
 	print('[ChessController] Executing move #%d: %s from %s to %s' % [_move_idx, piece, from_tile, to_tile])
 	
@@ -308,16 +335,8 @@ func _move_piece(
 	to_tile.piece = piece
 	piece.register_move(_move_idx)
 	
-	# Animation
-	# TODO: A pickup animation would be better here but this will do for now
-	var distance = from_tile.board_position.distance_to(to_tile.board_position)
-	var scaled_duration = anim_duration * sqrt(distance)
-	var tween = create_tween()
-	
-	if signal_anim_end:
-		tween.finished.connect(_on_piece_move_finished)
-	
-	tween.tween_property(piece, 'global_position', to_tile.global_position, scaled_duration)
+	# Request animation through signal bus
+	chess_signal_bus.move_animation_requested.emit(piece, from_tile, to_tile)
 
 
 func _check_for_game_over(for_player: Player) -> void:
@@ -325,7 +344,7 @@ func _check_for_game_over(for_player: Player) -> void:
 	if ChessBoardUtils.is_insufficient_material(_board_tiles):
 		_game_over = true
 		print('[ChessController] DRAW - Insufficient material (only kings remaining)')
-		draw.emit()
+		chess_signal_bus.draw.emit()
 		return
 	
 	# Check if the player is in check and if they have a legal move left
@@ -343,15 +362,15 @@ func _check_for_game_over(for_player: Player) -> void:
 		_game_over = true
 		if is_player_in_check:
 			var opposing_player := ChessUtils.get_opposing_player(for_player)
-			checkmate.emit(opposing_player)
+			chess_signal_bus.checkmate.emit(opposing_player)
 			print('[ChessController] CHECKMATE BY %s' % Player.keys()[opposing_player])
 		else:
 			print('[ChessController] STALEMATE')
-			stalemate.emit()
+			chess_signal_bus.stalemate.emit()
 	elif is_player_in_check:
 		var opposing_player := ChessUtils.get_opposing_player(for_player)
 		print('[ChessController] CHECK BY %s' % Player.keys()[opposing_player])
-		check.emit(opposing_player)
+		chess_signal_bus.check.emit(opposing_player)
 
 
 func _is_players_turn() -> bool:
@@ -426,9 +445,9 @@ func _on_chess_board_tile_clicked(tile: ChessBoardTile) -> void:
 		_select_piece_on_tile(tile)
 
 
-func _on_piece_move_finished() -> void:
+func _on_signal_bus_move_animation_completed() -> void:
 	if not _game_over:
-		_swap_player()
+		chess_signal_bus.turn_completed.emit()
 
 
 func _on_opponent_thinking_started() -> void:

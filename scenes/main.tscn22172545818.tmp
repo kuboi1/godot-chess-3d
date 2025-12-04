@@ -23,7 +23,6 @@ chess_opponent = NodePath("ChessOpponentComponent")
 chess_signal_bus = NodePath("../ChessSignalBus")
 
 [node name="ChessStartingPositionGenerator" parent="ChessController" instance=ExtResource("2_0wfyh")]
-active = false
 use_position = 1
 _fen_notation_position = "4k3/1P6/8/8/8/8/8/4K3"
 

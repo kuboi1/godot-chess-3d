@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://byuwk3fja2tuu"]
+
+[ext_resource type="Script" uid="uid://bwpcjysan3ajn" path="res://scenes/Chess/SignalBus/chess_signal_bus.gd" id="1_r2gcu"]
+
+[node name="ChessSignalBus" type="Node"]
+script = ExtResource("1_r2gcu")
