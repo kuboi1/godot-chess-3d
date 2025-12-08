@@ -1,10 +1,16 @@
-[gd_scene load_steps=3 format=3 uid="uid://d10t26yp5ouoe"]
+[gd_scene load_steps=4 format=3 uid="uid://d10t26yp5ouoe"]
 
 [ext_resource type="PackedScene" uid="uid://dosodo6vnwnuh" path="res://scenes/Chess/Piece/chess_piece.tscn" id="1_y7u42"]
 [ext_resource type="Script" uid="uid://bt8wb0pt20ysc" path="res://scenes/Chess/Piece/Types/Rook/rook_movement_component.gd" id="2_ckhv0"]
+[ext_resource type="PackedScene" uid="uid://pyn3cogt84lh" path="res://scenes/Chess/Piece/assets/models/chess_rook.glb" id="3_8aaii"]
 
 [node name="Rook" instance=ExtResource("1_y7u42")]
 type = 2
 
-[node name="MovementComponent" parent="." index="2"]
+[node name="CollisionShape" parent="." index="0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.65198976, 0)
+
+[node name="MovementComponent" parent="." index="1"]
 script = ExtResource("2_ckhv0")
+
+[node name="Model" parent="." index="2" instance=ExtResource("3_8aaii")]

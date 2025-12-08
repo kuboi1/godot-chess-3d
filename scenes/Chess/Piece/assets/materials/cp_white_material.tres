@@ -1,4 +1,9 @@
-[gd_resource type="StandardMaterial3D" format=3 uid="uid://d2bu2ut2384uw"]
+[gd_resource type="StandardMaterial3D" load_steps=2 format=3 uid="uid://cv51ace7t3dah"]
+
+[ext_resource type="Texture2D" uid="uid://c3cxls71cqhgj" path="res://scenes/Chess/Piece/assets/materials/cp_white.png" id="1_k4nfe"]
 
 [resource]
-albedo_color = Color(0.801039, 0.782151, 0.699876, 1)
+resource_name = "White"
+cull_mode = 2
+albedo_texture = ExtResource("1_k4nfe")
+texture_filter = 2
