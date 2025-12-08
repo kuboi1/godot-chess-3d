@@ -11,27 +11,27 @@ enum Position {
 
 const STARTING_POSITIONS = {
 	Position.WHITE_DEFAULT: {
-		'arm_length': 7.0,
+		'arm_length': 8.0,
 		'rotation': Vector3(deg_to_rad(-32.0), deg_to_rad(0.0), deg_to_rad(0.0))
 	},
 	Position.BLACK_DEFAULT: {
-		'arm_length': 7.0,
+		'arm_length': 8.0,
 		'rotation': Vector3(deg_to_rad(-32.0), deg_to_rad(180.0), deg_to_rad(0.0))
 	}
 }
 
 const POSITIONS = {
 	Position.WHITE_DEFAULT: {
-		'arm_length': 8.0,
-		'rotation': Vector3(deg_to_rad(-45.0), deg_to_rad(0.0), deg_to_rad(0.0))
+		'arm_length': 7.5,
+		'rotation': Vector3(deg_to_rad(-40.0), deg_to_rad(0.0), deg_to_rad(0.0))
 	},
 	Position.BLACK_DEFAULT: {
-		'arm_length': 8.0,
-		'rotation': Vector3(deg_to_rad(-45.0), deg_to_rad(180.0), deg_to_rad(0.0))
+		'arm_length': 7.5,
+		'rotation': Vector3(deg_to_rad(-40.0), deg_to_rad(180.0), deg_to_rad(0.0))
 	},
 	Position.WHITE_OVERHEAD: {
 		'arm_length': 7.0,
-		'rotation': Vector3(deg_to_rad(-90.0), deg_to_rad(0.0), deg_to_rad(0.0))
+		'rotation': Vector3(deg_to_rad(-70.0), deg_to_rad(0.0), deg_to_rad(0.0))
 	},
 	Position.BLACK_OVERHEAD: {
 		'arm_length': 7.0,
