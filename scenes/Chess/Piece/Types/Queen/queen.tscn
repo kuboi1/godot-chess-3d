@@ -4,18 +4,15 @@
 [ext_resource type="Script" uid="uid://ee85nrj2steg" path="res://scenes/Chess/Piece/Types/Queen/queen_movement_component.gd" id="2_y5ljm"]
 [ext_resource type="Script" uid="uid://bt8wb0pt20ysc" path="res://scenes/Chess/Piece/Types/Rook/rook_movement_component.gd" id="3_c67lk"]
 [ext_resource type="Script" uid="uid://cjhmm75j5auit" path="res://scenes/Chess/Piece/Types/Bishop/bishop_movement_component.gd" id="4_v1vfv"]
-
-[sub_resource type="BoxMesh" id="BoxMesh_2cmlf"]
-size = Vector3(0.5, 1.5, 0.5)
+[ext_resource type="PackedScene" uid="uid://dhacmrvc4tjuy" path="res://scenes/Chess/Piece/assets/models/chess_queen.glb" id="5_v1vfv"]
 
 [node name="Queen" instance=ExtResource("1_2cmlf")]
 type = 1
 
-[node name="Mesh" parent="." index="0"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, 0)
-mesh = SubResource("BoxMesh_2cmlf")
+[node name="CollisionShape" parent="." index="0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0078125, 0.9265961, -0.00390625)
 
-[node name="MovementComponent" parent="." index="2"]
+[node name="MovementComponent" parent="." index="1"]
 script = ExtResource("2_y5ljm")
 
 [node name="RookComponent" type="Node" parent="MovementComponent" index="0"]
@@ -23,3 +20,5 @@ script = ExtResource("3_c67lk")
 
 [node name="BishopComponent" type="Node" parent="MovementComponent" index="1"]
 script = ExtResource("4_v1vfv")
+
+[node name="Model" parent="." index="2" instance=ExtResource("5_v1vfv")]

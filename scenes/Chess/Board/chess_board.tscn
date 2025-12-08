@@ -1,7 +1,7 @@
 [gd_scene load_steps=12 format=3 uid="uid://d1wh5magssg4l"]
 
 [ext_resource type="Script" uid="uid://comxfd6qdjsf1" path="res://scenes/Chess/Board/chess_board.gd" id="1_sfxdj"]
-[ext_resource type="Texture2D" uid="uid://rh0f4a28xh8x" path="res://assets/img/chess-board-flat.png" id="1_yhn6s"]
+[ext_resource type="Texture2D" uid="uid://bt58g3ilcmpmc" path="res://scenes/Chess/Board/assets/chess_board.png" id="2_1qjs8"]
 [ext_resource type="PackedScene" uid="uid://d33tj0x1j335v" path="res://scenes/Chess/Board/Tile/chess_board_tile.tscn" id="2_maaw1"]
 [ext_resource type="PackedScene" uid="uid://d10t26yp5ouoe" path="res://scenes/Chess/Piece/Types/Rook/rook.tscn" id="4_b1eyf"]
 [ext_resource type="PackedScene" uid="uid://itum15cxjhym" path="res://scenes/Chess/Piece/Types/Knight/knight.tscn" id="5_ij87f"]
@@ -11,7 +11,8 @@
 [ext_resource type="PackedScene" uid="uid://5faxlr3dahfb" path="res://scenes/Chess/Piece/Types/Pawn/pawn.tscn" id="9_1qjs8"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_maaw1"]
-albedo_texture = ExtResource("1_yhn6s")
+albedo_texture = ExtResource("2_1qjs8")
+texture_filter = 0
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_sfxdj"]
 size = Vector2(8, 8)
@@ -20,7 +21,7 @@ size = Vector2(8, 8)
 script = ExtResource("1_sfxdj")
 
 [node name="FlatBoardImg" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.01, 0)
+transform = Transform3D(1.063437, 0, 0, 0, 1, 0, 0, 0, 1.0667393, 0, -0.01, 0)
 material_override = SubResource("StandardMaterial3D_maaw1")
 mesh = SubResource("PlaneMesh_sfxdj")
 

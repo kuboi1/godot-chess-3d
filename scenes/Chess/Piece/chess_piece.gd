@@ -16,6 +16,9 @@ enum SpecialMove {
 	EN_PASSANT
 }
 
+const WHITE_MAT_PATH = 'res://scenes/Chess/Piece/assets/materials/cp_white_material.tres'
+const BLACK_MAT_PATH = 'res://scenes/Chess/Piece/assets/materials/cp_black_material.tres'
+
 signal start_hover
 signal end_hover
 signal clicked
@@ -23,20 +26,17 @@ signal clicked
 @export var owner_player: ChessController.Player = ChessController.Player.WHITE
 @export var type: Type
 
-@onready var pre_white_mat: StandardMaterial3D = preload('res://scenes/Chess/Piece/assets/materials/cp_white_material.tres')
-@onready var pre_black_mat: StandardMaterial3D = preload('res://scenes/Chess/Piece/assets/materials/cp_black_material.tres')
 @onready var pre_select_mat: StandardMaterial3D = preload('res://scenes/Chess/Piece/assets/materials/cp_select_material.tres')
 
-@onready var n_mesh = $Mesh
-
 var _movement_component: ChessPieceMovementComponent
+var _mesh: MeshInstance3D
 
 var board_postion: Vector2i
 
 var selected: bool = false :
 	set(value):
 		selected = value
-		n_mesh.material_overlay = pre_select_mat if selected else null
+		_mesh.material_overlay = pre_select_mat if selected else null
 var move_count: int :
 	get():
 		return _movement_component.move_count
@@ -48,11 +48,12 @@ func _ready() -> void:
 	var initialized = _init_piece()
 	if not initialized:
 		push_error('Chess piece %s could not be initialized' % self)
+		return
 	
 	if owner_player == ChessController.Player.WHITE:
-		n_mesh.material_override = pre_white_mat
+		_mesh.material_override = load(WHITE_MAT_PATH)
 	else:
-		n_mesh.material_override = pre_black_mat
+		_mesh.material_override = load(BLACK_MAT_PATH)
 
 
 func _init_piece() -> bool:
@@ -60,10 +61,33 @@ func _init_piece() -> bool:
 		if child is ChessPieceMovementComponent:
 			_movement_component = child
 	
+	_mesh = _get_mesh_from_model()
+	
 	if _movement_component == null:
 		push_error('The MovementComponent child of chess piece %s is missing a ChessPieceMovementComponent derived script' % self)
 	
-	return _movement_component != null
+	if _mesh == null:
+		push_error('A Model Node3d with a MeshInstance3D child is missing in %s' % self)
+	
+	return _movement_component != null and _mesh != null
+
+
+func _get_mesh_from_model() -> MeshInstance3D:
+	if not has_node('Model'):
+		return null
+	
+	var model = $Model
+	for child in model.get_children():
+		if child is MeshInstance3D:
+			return child
+	
+	# If not found in immediate children, search one level deeper
+	for child in model.get_children():
+		for nested_child in child.get_children():
+			if nested_child is MeshInstance3D:
+				return nested_child
+	
+	return null
 
 
 func _to_string() -> String:
@@ -95,7 +119,7 @@ func set_hover_effect(value: bool) -> void:
 	if selected:
 		return
 	
-	n_mesh.material_overlay = pre_select_mat if value else null
+	_mesh.material_overlay = pre_select_mat if value else null
 
 
 func _on_mouse_entered() -> void:

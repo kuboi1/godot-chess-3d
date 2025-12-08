@@ -2,15 +2,12 @@
 
 [ext_resource type="PackedScene" uid="uid://dosodo6vnwnuh" path="res://scenes/Chess/Piece/chess_piece.tscn" id="1_ubp87"]
 [ext_resource type="Script" uid="uid://cjhmm75j5auit" path="res://scenes/Chess/Piece/Types/Bishop/bishop_movement_component.gd" id="2_2gyeh"]
-
-[sub_resource type="BoxMesh" id="BoxMesh_2gyeh"]
-size = Vector3(0.35, 1.2, 0.35)
+[ext_resource type="PackedScene" uid="uid://dbx48vqpok3gb" path="res://scenes/Chess/Piece/assets/models/chess_bishop.glb" id="3_ujlvo"]
 
 [node name="Bishop" instance=ExtResource("1_ubp87")]
 type = 4
 
-[node name="Mesh" parent="." index="0"]
-mesh = SubResource("BoxMesh_2gyeh")
-
-[node name="MovementComponent" parent="." index="2"]
+[node name="MovementComponent" parent="." index="1"]
 script = ExtResource("2_2gyeh")
+
+[node name="Model" parent="." index="2" instance=ExtResource("3_ujlvo")]
