@@ -62,7 +62,7 @@ func generate_position(board: Array[Array]) -> Array[Array]:
 		
 		tile.piece = piece_instance
 	
-	print('Successfully generated a chess position (%d pieces placed)' % _positions.size())
+	print('[ChessStartingPositionGenerator] Successfully generated a chess position (%d pieces placed)' % _positions.size())
 	
 	return board
 

@@ -11,11 +11,6 @@ enum Type {
 	PAWN
 }
 
-enum SpecialMove {
-	CASTLE,
-	EN_PASSANT
-}
-
 const WHITE_MAT_PATH = 'res://scenes/Chess/Piece/assets/materials/cp_white_material.tres'
 const BLACK_MAT_PATH = 'res://scenes/Chess/Piece/assets/materials/cp_black_material.tres'
 

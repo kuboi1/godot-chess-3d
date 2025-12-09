@@ -41,8 +41,8 @@ func _on_signal_bus_stalemate() -> void:
 	print('[Main] stalemate event received')
 
 
-func _on_signal_bus_draw() -> void:
-	print('[Main] draw event received')
+func _on_signal_bus_draw(reason: ChessUtils.DrawReason) -> void:
+	print('[Main] draw event received %s' % ChessUtils.DrawReason.keys()[reason])
 
 
 func _on_signal_bus_player_swapped(current_player: ChessController.Player) -> void:

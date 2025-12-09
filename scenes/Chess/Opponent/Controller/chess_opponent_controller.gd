@@ -107,17 +107,18 @@ func _init_chess_engine(debug_mode: bool) -> void:
 
 
 # This can be later updated to use a starting position and moves, but this will do for now
-func update_position(board_tiles: Array[Array], move_idx: int) -> void:
+func update_position(board_tiles: Array[Array], move_idx: int, halfmove_clock: int = 0) -> void:
 	var fen_pos: String = ChessPositionConvertor.board_tiles_to_fen(
 		board_tiles,
 		player_color,
-		move_idx
+		move_idx,
+		halfmove_clock
 	)
 	_chess_engine.SetPosition(fen_pos, [])
 
 
-func request_move(board_tiles: Array[Array], move_idx: int) -> void:
-	update_position(board_tiles, move_idx)
+func request_move(board_tiles: Array[Array], move_idx: int, halfmove_clock: int = 0) -> void:
+	update_position(board_tiles, move_idx, halfmove_clock)
 	
 	if _is_in_opening:
 		var opening_move: String = _opening.get_move(_opening_move_idx)
