@@ -9,6 +9,12 @@ enum CastlingRight {
 	BLACK_QUEENSIDE
 }
 
+enum DrawReason {
+	FIFTY_MOVE,
+	THREEFOLD_REPETITION,
+	INSUFFICIENT_MATERIAL
+}
+
 const CHESS_FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
 const CHESS_RANKS = ['1', '2', '3', '4', '5', '6', '7', '8']
 

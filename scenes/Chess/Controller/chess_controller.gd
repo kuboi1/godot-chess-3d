@@ -27,6 +27,8 @@ enum Player {
 
 var _current_player: Player = Player.WHITE
 var _move_idx: int = 0
+var _halfmove_clock: int = 0
+var _position_history: Dictionary = {}  # Key: position string, Value: occurrence count
 
 var _board_tiles: Array[Array] :
 	get():
@@ -82,7 +84,10 @@ func _ready() -> void:
 			push_warning('Chess controller with game type VS_AI initialized without a chess opponent set.')
 		
 		if opponent_controller.player_color == Player.WHITE:
-			opponent_controller.request_move(_board_tiles, _move_idx)
+			opponent_controller.request_move(_board_tiles, _move_idx, _halfmove_clock)
+	
+	# Record the starting position for threefold repetition tracking
+	_record_position()
 	
 	# Safety check for positions starting with check/checkmate/stalemate
 	_check_for_game_over(_current_player)
@@ -151,7 +156,7 @@ func _swap_player() -> void:
 	elif game_type == GameType.VS_AI:
 		_locked = false
 		if _current_player != player_color:
-			opponent_controller.request_move(_board_tiles, _move_idx)
+			opponent_controller.request_move(_board_tiles, _move_idx, _halfmove_clock)
 
 
 func _select_piece_on_tile(tile: ChessBoardTile) -> void:
@@ -237,7 +242,19 @@ func _finalize_move(move: ChessMove, piece: ChessPiece) -> void:
 	if move.type == ChessMove.Type.CASTLE:
 		_execute_castle(move)
 	
+	# Update halfmove clock (50-move rule tracking)
+	if piece.type == ChessPiece.Type.PAWN or move.is_capture():
+		_halfmove_clock = 0
+		# Clear position history on irreversible moves (pawn moves and captures)
+		# Positions before these moves can never be repeated
+		_position_history.clear()
+	else:
+		_halfmove_clock += 1
+	
 	_move_idx += 1
+	
+	# Record the current position for threefold repetition detection
+	_record_position()
 	
 	# Emit move executed event
 	chess_signal_bus.move_executed.emit(move, piece.owner_player)
@@ -340,11 +357,9 @@ func _move_piece(
 
 
 func _check_for_game_over(for_player: Player) -> void:
-	# Check for insufficient material (only kings remaining)
-	if ChessBoardUtils.is_insufficient_material(_board_tiles):
-		_game_over = true
-		print('[ChessController] DRAW - Insufficient material (only kings remaining)')
-		chess_signal_bus.draw.emit()
+	# Check for draw
+	var is_draw := _check_for_draw()
+	if is_draw:
 		return
 	
 	# Check if the player is in check and if they have a legal move left
@@ -371,6 +386,52 @@ func _check_for_game_over(for_player: Player) -> void:
 		var opposing_player := ChessUtils.get_opposing_player(for_player)
 		print('[ChessController] CHECK BY %s' % Player.keys()[opposing_player])
 		chess_signal_bus.check.emit(opposing_player)
+
+
+func _get_position_key() -> String:
+	# Generate position key from first 4 FEN fields
+	var fen := ChessPositionConvertor.board_tiles_to_fen(
+		_board_tiles,
+		_current_player,
+		_move_idx,
+		_halfmove_clock
+	)
+	var fen_parts := fen.split(' ')
+	return ' '.join(fen_parts.slice(0, 4))
+
+
+func _record_position() -> void:
+	var position_key := _get_position_key()
+	if position_key in _position_history:
+		_position_history[position_key] += 1
+	else:
+		_position_history[position_key] = 1
+
+
+func _check_for_draw() -> bool:
+	# Check for fifty-move rule (100 halfmoves = 50 full moves)
+	if _halfmove_clock >= 100:
+		_game_over = true
+		print('[ChessController] DRAW - Fifty-move rule')
+		chess_signal_bus.draw.emit(ChessUtils.DrawReason.FIFTY_MOVE)
+		return true
+	
+	# Check for threefold repetition
+	var position_key := _get_position_key()
+	if position_key in _position_history and _position_history[position_key] >= 3:
+		_game_over = true
+		print('[ChessController] DRAW - Threefold repetition')
+		chess_signal_bus.draw.emit(ChessUtils.DrawReason.THREEFOLD_REPETITION)
+		return true
+	
+	# Check for insufficient material
+	if ChessBoardUtils.is_insufficient_material(_board_tiles):
+		_game_over = true
+		print('[ChessController] DRAW - Insufficient material')
+		chess_signal_bus.draw.emit(ChessUtils.DrawReason.INSUFFICIENT_MATERIAL)
+		return true
+	
+	return false
 
 
 func _is_players_turn() -> bool:

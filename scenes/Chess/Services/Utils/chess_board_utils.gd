@@ -53,16 +53,53 @@ static func is_king_in_check(
 static func is_insufficient_material(board: Array[Array]) -> bool:
 	var piece_count := 0
 	var king_count := 0
+	var knight_count := 0
+	var bishop_count := 0
+	var bishop_on_white_square := false
+	var bishop_on_black_square := false
 	
 	for row in board:
 		for tile: ChessBoardTile in row:
 			if tile.has_piece():
 				piece_count += 1
-				if tile.piece.type == ChessPiece.Type.KING:
-					king_count += 1
+				var piece := tile.piece
+				
+				match piece.type:
+					ChessPiece.Type.KING:
+						king_count += 1
+					ChessPiece.Type.KNIGHT:
+						knight_count += 1
+					ChessPiece.Type.BISHOP:
+						bishop_count += 1
+						# Determine bishop square color: (x + y) % 2
+						# 0 = white square, 1 = black square
+						var square_color := (tile.board_position.x + tile.board_position.y) % 2
+						if square_color == 0:
+							bishop_on_white_square = true
+						else:
+							bishop_on_black_square = true
+					_:
+						return false
 	
-	# Only kings remaining
-	return piece_count == 2 and king_count == 2
+	# King vs King
+	if piece_count == 2 and king_count == 2:
+		return true
+	
+	# King + Bishop vs King
+	if piece_count == 3 and king_count == 2 and bishop_count == 1:
+		return true
+	
+	# King + Knight vs King
+	if piece_count == 3 and king_count == 2 and knight_count == 1:
+		return true
+	
+	# King + Bishop vs King + Bishop (same colored squares)
+	if piece_count == 4 and king_count == 2 and bishop_count == 2:
+		# Both bishops must be on the same color squares
+		if (bishop_on_white_square and not bishop_on_black_square) or (bishop_on_black_square and not bishop_on_white_square):
+			return true
+	
+	return false
 
 
 static func player_has_legal_moves(
@@ -100,7 +137,7 @@ static func simulate_move(
 	from_pos: Vector2i,
 	to_pos: Vector2i,
 	board: Array[Array],
-	move_idx: int
+	_move_idx: int
 ) -> Array[Array]:
 	var simulated_board: Array[Array] = []
 	

@@ -17,6 +17,7 @@ var type: Type
 var metadata: Dictionary
 
 
+@warning_ignore('shadowed_variable')
 func _init(from: Vector2i, to: Vector2i, type: Type = Type.NORMAL, metadata: Dictionary = {}) -> void:
 	self.from = from
 	self.to = to
