@@ -80,6 +80,13 @@ func _ready() -> void:
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed('debug_chess_swap_player'):
 		_swap_player()
+	
+	if (
+		event.is_action_pressed('chess_cancel_select') and
+		_piece_selected and
+		_selected_piece_tile.has_piece()
+	):
+		_deselect_piece(_selected_piece_tile.piece)
 
 
 func lock() -> void:
@@ -159,6 +166,12 @@ func _select_piece_on_tile(tile: ChessBoardTile) -> void:
 func _deselect_piece(piece: ChessPiece) -> void:
 	piece.selected = false
 	_piece_selected = false
+	
+	# Clear all tile highlights for legal moves
+	for move in _legal_moves:
+		var tile: ChessBoardTile = _board_tiles[move.to.y][move.to.x]
+		tile.highlight(false)
+	
 	_legal_moves = []
 
 
@@ -221,7 +234,6 @@ func _finalize_move(move: ChessMove, piece: ChessPiece) -> void:
 		_position_history.clear()
 	else:
 		_halfmove_clock += 1
-	
 	
 	# Record the current position for threefold repetition
 	_record_position()
@@ -406,6 +418,13 @@ func _is_players_turn() -> bool:
 
 func _on_chess_camera_animation_started() -> void:
 	_locked = true
+	
+	# Clear all hover states and highlights when camera moves
+	for row in _board_tiles:
+		for tile in row:
+			tile.highlight(false)
+			if tile.has_piece():
+				tile.piece.set_hover_effect(false)
 
 
 func _on_chess_camera_animation_finished() -> void:
