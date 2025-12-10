@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ChessOpening" load_steps=2 format=3 uid="uid://dsn8vh3j2xkpa"]
+
+[ext_resource type="Script" uid="uid://nffv22vwjr10" path="res://ChessModule/scenes/Opponent/Component/Opening/chess_opening.gd" id="1_46hpl"]
+
+[resource]
+script = ExtResource("1_46hpl")
+side = 1
+moves = Array[String](["d7d5", "d8d5", "d5a5", "g8f6", "c7c6", "b8d7"])
+name = "Scandinavian Defense"
+metadata/_custom_type_script = "uid://nffv22vwjr10"

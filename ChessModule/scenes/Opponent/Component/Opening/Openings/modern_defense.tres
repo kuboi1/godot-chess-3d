@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ChessOpening" load_steps=2 format=3 uid="uid://cp3kv8jmq2rpa"]
+
+[ext_resource type="Script" uid="uid://nffv22vwjr10" path="res://ChessModule/scenes/Opponent/Component/Opening/chess_opening.gd" id="1_46hpl"]
+
+[resource]
+script = ExtResource("1_46hpl")
+side = 1
+moves = Array[String](["g7g6", "f8g7", "d7d6", "g8f6", "e8g8", "c7c6"])
+name = "Modern Defense"
+metadata/_custom_type_script = "uid://nffv22vwjr10"

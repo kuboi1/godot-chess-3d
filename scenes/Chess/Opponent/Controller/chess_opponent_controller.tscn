@@ -1,6 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://cys8k7xiawetk"]
-
-[ext_resource type="Script" uid="uid://odeqsb1sn233" path="res://scenes/Chess/Opponent/Controller/chess_opponent_controller.gd" id="1_dwgds"]
-
-[node name="ChessOpponentController" type="Node"]
-script = ExtResource("1_dwgds")

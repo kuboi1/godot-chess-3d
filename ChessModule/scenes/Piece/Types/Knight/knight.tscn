@@ -1,0 +1,17 @@
+[gd_scene load_steps=4 format=3 uid="uid://itum15cxjhym"]
+
+[ext_resource type="PackedScene" uid="uid://dosodo6vnwnuh" path="res://ChessModule/scenes/Piece/chess_piece.tscn" id="1_c5jw8"]
+[ext_resource type="Script" uid="uid://60hxxof5tcwx" path="res://ChessModule/scenes/Piece/Types/Knight/knight_movement_component.gd" id="2_fdwdl"]
+[ext_resource type="PackedScene" uid="uid://drisi00rxn7j8" path="res://ChessModule/scenes/Piece/assets/models/chess_knight.glb" id="3_u5ktb"]
+
+[node name="Knight" instance=ExtResource("1_c5jw8")]
+type = 3
+
+[node name="CollisionShape" parent="." index="0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0009765625, 0.62616664, -0.0062408447)
+
+[node name="MovementComponent" parent="." index="1"]
+script = ExtResource("2_fdwdl")
+
+[node name="Model" parent="." index="2" instance=ExtResource("3_u5ktb")]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 0, 0, 0)
