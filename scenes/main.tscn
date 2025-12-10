@@ -55,6 +55,7 @@ script = ExtResource("1_tipki")
 [node name="ChessSignalBus" parent="." instance=ExtResource("2_choun")]
 
 [node name="ChessController" parent="." node_paths=PackedStringArray("starting_position_generator", "chess_opponent", "chess_signal_bus") instance=ExtResource("1_sugp2")]
+game_type = 0
 starting_position_generator = NodePath("ChessStartingPositionGenerator")
 chess_opponent = NodePath("ChessOpponentComponent")
 chess_signal_bus = NodePath("../ChessSignalBus")
@@ -119,8 +120,11 @@ text = "KNIGHT"
 piece_type = 3
 
 [node name="StartGameContainer" type="CenterContainer" parent="UI"]
-offset_right = 1280.0
-offset_bottom = 720.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="TextureRect" type="ColorRect" parent="UI/StartGameContainer"]
 custom_minimum_size = Vector2(1280, 720)
@@ -144,13 +148,22 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "START GAME"
 
+[node name="SetupBoardButton" type="Button" parent="UI/StartGameContainer/VBoxContainer"]
+layout_mode = 2
+text = "SETUP BOARD"
+
 [node name="ClearBoardButton" type="Button" parent="UI/StartGameContainer/VBoxContainer"]
 layout_mode = 2
 text = "CLEAR BOARD"
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.3150031, 0.94909066, 0, -0.94909066, 0.3150031, 0, 9.035889, 3.3328762)
+current = true
 
 [connection signal="promote" from="UI/PromotionSelect/QueenButton" to="." method="_on_promotion_button_promote"]
 [connection signal="promote" from="UI/PromotionSelect/RookButton" to="." method="_on_promotion_button_promote"]
 [connection signal="promote" from="UI/PromotionSelect/BishopButton" to="." method="_on_promotion_button_promote"]
 [connection signal="promote" from="UI/PromotionSelect/KnightButton" to="." method="_on_promotion_button_promote"]
 [connection signal="pressed" from="UI/StartGameContainer/VBoxContainer/StartGameButton" to="." method="_on_start_game_button_pressed"]
+[connection signal="pressed" from="UI/StartGameContainer/VBoxContainer/SetupBoardButton" to="." method="_on_setup_board_button_pressed"]
 [connection signal="pressed" from="UI/StartGameContainer/VBoxContainer/ClearBoardButton" to="." method="_on_clear_board_button_pressed"]

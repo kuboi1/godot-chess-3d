@@ -24,17 +24,19 @@ enum Player {
 @export var chess_signal_bus: ChessSignalBus
 
 @onready var opponent_controller: ChessOpponentController = $ChessOpponentController
-@onready var n_board: ChessBoard = $ChessBoard
-@onready var n_camera: ChessCamera = $ChessCamera
+@onready var camera: ChessCamera = $ChessCamera
+@onready var _board: ChessBoard = $ChessBoard
 
 var _current_player: Player = Player.WHITE
 var _move_idx: int = 0
 var _halfmove_clock: int = 0
 var _position_history: Dictionary = {}  # Key: position string, Value: occurrence count
 
+var can_exit_game: bool = true
+
 var _board_tiles: Array[Array] :
 	get():
-		return n_board.tiles
+		return _board.tiles
 
 var _locked := false
 var _game_over := false
@@ -53,34 +55,46 @@ func _ready() -> void:
 		push_error('ChessController requires chess_signal_bus to be set!')
 		return
 	
+	camera.set_player(
+		_current_player if game_type == GameType.LOCAL_MULTIPLAYER else player_color
+	)
+	
 	chess_signal_bus.promote.connect(_on_signal_bus_promote)
 	chess_signal_bus.next_move.connect(_on_signal_bus_next_move)
 	chess_signal_bus.move_animation_completed.connect(_on_signal_bus_move_animation_completed)
-	chess_signal_bus.new_game.connect(_on_signal_bus_new_game)
+	chess_signal_bus.setup_game.connect(_on_signal_bus_setup_game)
+	chess_signal_bus.start_game.connect(_on_signal_bus_start_game)
 	chess_signal_bus.clear_board.connect(_on_signal_bus_clear_board)
 	chess_signal_bus.register_opponent.connect(_on_signal_bus_register_opponent)
+	chess_signal_bus.shutdown_ai.connect(_on_signal_bus_shutdown_ai)
+	
+	opponent_controller.thinking_started.connect(_on_opponent_thinking_started)
+	opponent_controller.move_calculated.connect(_on_opponent_move_calculated)
 	
 	if start_cleared:
-		n_board.clear_board()
+		_board.clear_board()
 	
-	if game_type == GameType.VS_AI:
-		opponent_controller.player_color = ChessUtils.get_opposing_player(player_color)
-		
-		opponent_controller.thinking_started.connect(_on_opponent_thinking_started)
-		opponent_controller.move_calculated.connect(_on_opponent_move_calculated)
-		
-		if chess_opponent:
-			await _register_opponent(chess_opponent)
-		else:
-			push_warning('Chess controller with game type VS_AI initialized without a chess opponent set.')
-	
-	# Prevent interaction until new_game signal is received
+	# Prevent interaction until setup_game/start_game signals are received
 	_game_over = true
 
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed('debug_chess_swap_player'):
 		_swap_player()
+
+
+func lock() -> void:
+	_locked = true
+
+
+func unlock() -> void:
+	_locked = false
+
+
+func shutdown_ai() -> void:
+	if opponent_controller.initialized:
+		opponent_controller.shutdown()
+		print('[ChessController] AI opponent shut down')
 
 
 func _register_opponent(opponent: ChessOpponentComponent) -> void:
@@ -113,7 +127,7 @@ func _swap_player() -> void:
 	chess_signal_bus.player_swapped.emit(_current_player)
 	
 	if game_type == GameType.LOCAL_MULTIPLAYER:
-		n_camera.set_player(_current_player)
+		camera.set_player(_current_player)
 	elif game_type == GameType.VS_AI:
 		_locked = false
 		if _current_player != player_color:
@@ -209,14 +223,11 @@ func _finalize_move(move: ChessMove, piece: ChessPiece) -> void:
 	else:
 		_halfmove_clock += 1
 	
-	_move_idx += 1
 	
 	# Record the current position for threefold repetition
 	_record_position()
 	
 	chess_signal_bus.move_executed.emit(move, piece.owner_player)
-	
-	_check_for_game_over(ChessUtils.get_opposing_player(_current_player))
 	
 	_deselect_piece(piece)
 
@@ -307,6 +318,7 @@ func _move_piece(
 	to_tile.piece = piece
 	piece.register_move(_move_idx)
 	
+	can_exit_game = false
 	chess_signal_bus.move_animation_requested.emit(piece, from_tile, to_tile)
 
 
@@ -459,8 +471,12 @@ func _on_chess_board_tile_clicked(tile: ChessBoardTile) -> void:
 
 
 func _on_signal_bus_move_animation_completed() -> void:
+	can_exit_game = true
+	
 	if not _game_over:
-		chess_signal_bus.turn_completed.emit()
+		chess_signal_bus.turn_completed.emit(_move_idx)
+		_move_idx += 1
+		_check_for_game_over(_current_player)
 
 # OPPONENT SIGNALS
 
@@ -475,8 +491,8 @@ func _on_opponent_move_calculated(uci_move: String) -> void:
 
 # SIGNAL BUS SIGNALS
 
-func _on_signal_bus_new_game(metadata: Dictionary) -> void:
-	print('[ChessController] New game starting...')
+func _on_signal_bus_setup_game(metadata: Dictionary) -> void:
+	print('[ChessController] Setting up game...')
 	
 	# Handle metadata for player color
 	if metadata.has("flip_sides") and metadata.flip_sides:
@@ -487,6 +503,7 @@ func _on_signal_bus_new_game(metadata: Dictionary) -> void:
 		print('[ChessController] Set player color to %s' % Player.keys()[player_color])
 	
 	_reset_game_state()
+	_game_over = true  # Keep locked until start_game is called
 	
 	if starting_position_generator:
 		starting_position_generator.generate_position(_board_tiles)
@@ -494,14 +511,27 @@ func _on_signal_bus_new_game(metadata: Dictionary) -> void:
 	else:
 		push_warning('No starting position generator assigned, board will remain as is')
 	
-	n_camera.set_player(
-		_current_player if game_type == GameType.LOCAL_MULTIPLAYER else player_color,
-		true
+	camera.set_player(
+		_current_player if game_type == GameType.LOCAL_MULTIPLAYER else player_color
 	)
 	
 	if game_type == GameType.VS_AI:
 		opponent_controller.player_color = ChessUtils.get_opposing_player(player_color)
 		
+		if chess_opponent:
+			await _register_opponent(chess_opponent)
+		else:
+			push_warning('Chess controller with game type VS_AI initialized without a chess opponent set.')
+	
+	print('[ChessController] Game setup complete')
+
+
+func _on_signal_bus_start_game() -> void:
+	print('[ChessController] Starting game...')
+	
+	_game_over = false  # Unlock the game
+	
+	if game_type == GameType.VS_AI:
 		# Request move if AI plays first
 		if opponent_controller.player_color == Player.WHITE:
 			opponent_controller.request_move(_board_tiles, _move_idx, _halfmove_clock)
@@ -516,7 +546,7 @@ func _on_signal_bus_new_game(metadata: Dictionary) -> void:
 	}
 	chess_signal_bus.game_started.emit(game_metadata)
 	
-	print('[ChessController] New game started successfully')
+	print('[ChessController] Game started successfully')
 
 
 func _on_signal_bus_promote(to_piece: ChessPiece.Type) -> void:
@@ -549,5 +579,9 @@ func _on_signal_bus_register_opponent(opponent: ChessOpponentComponent) -> void:
 
 
 func _on_signal_bus_clear_board() -> void:
-	n_board.clear_board()
+	_board.clear_board()
 	print('[ChessController] Cleared board')
+
+
+func _on_signal_bus_shutdown_ai() -> void:
+	shutdown_ai()

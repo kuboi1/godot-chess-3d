@@ -6,11 +6,17 @@ extends Node3D
 @onready var n_start_game_container: CenterContainer = $UI/StartGameContainer
 @onready var n_status_label: Label = $UI/StartGameContainer/VBoxContainer/StatusLabel
 
+@onready var camera: Camera3D = $Camera3D
+@onready var chess_controller: ChessController = $ChessController
+
 var _animation_queue: Array = []
 var _is_animating: bool = false
+var _original_cam_trans: Transform3D
 
 
 func _ready() -> void:
+	_original_cam_trans = camera.global_transform
+	
 	# Connect to signal bus events
 	chess_signal_bus.game_started.connect(_on_signal_bus_game_started)
 	chess_signal_bus.checkmate.connect(_on_signal_bus_checkmate)
@@ -72,7 +78,7 @@ func _on_signal_bus_promotion_requested(pos: Vector2i, player: ChessController.P
 	n_promotion_select.show()
 
 
-func _on_signal_bus_turn_completed() -> void:
+func _on_signal_bus_turn_completed(_move_idx: int) -> void:
 	print('[Main] turn_completed event received')
 	# For now, immediately emit next_move to continue game flow
 	chess_signal_bus.next_move.emit()
@@ -152,6 +158,16 @@ func _process_animation_queue() -> void:
 func _handle_game_over(status: String) -> void:
 	n_status_label.text = status
 	n_start_game_container.show()
+	
+	chess_controller.lock()
+	
+	camera.current = true
+	chess_controller.camera.current = false
+	
+	var tween := create_tween()
+	tween.set_ease(Tween.EASE_OUT)
+	
+	tween.tween_property(camera, 'global_transform', _original_cam_trans, 1.0)
 
 
 func _on_animation_finished() -> void:
@@ -166,8 +182,28 @@ func _on_promotion_button_promote(to_piece: ChessPiece.Type) -> void:
 
 func _on_start_game_button_pressed() -> void:
 	n_start_game_container.hide()
-	chess_signal_bus.new_game.emit({})
+	
+	chess_controller.lock()
+	chess_signal_bus.setup_game.emit({})
+	
+	var chess_cam_trans := chess_controller.camera.get_target_transform()
+	
+	var tween := create_tween()
+	tween.set_ease(Tween.EASE_OUT)
+	
+	tween.tween_property(camera, 'global_transform', chess_cam_trans, 1.0)
+	tween.finished.connect(
+		func():
+			chess_controller.unlock()
+			camera.current = false
+			chess_controller.camera.current = true
+			chess_signal_bus.start_game.emit()
+	)
 
 
 func _on_clear_board_button_pressed() -> void:
 	chess_signal_bus.clear_board.emit()
+
+
+func _on_setup_board_button_pressed() -> void:
+	chess_signal_bus.setup_game.emit({})

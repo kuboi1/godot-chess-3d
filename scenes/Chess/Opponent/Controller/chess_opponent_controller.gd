@@ -88,6 +88,13 @@ func register_opponent(opponent_component: ChessOpponentComponent) -> void:
 	])
 
 
+func shutdown() -> void:
+	if _chess_engine:
+		_chess_engine.StopEngine()
+		initialized = false
+		print('[ChessOpponentController] Stockfish engine stopped')
+
+
 func _init_chess_engine(debug_mode: bool) -> void:
 	_chess_engine = StockfishEngine.new()
 	self.add_child(_chess_engine)
