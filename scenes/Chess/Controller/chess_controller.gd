@@ -13,6 +13,7 @@ enum Player {
 
 @export_category('Config')
 @export var game_type: GameType = GameType.LOCAL_MULTIPLAYER
+@export var start_cleared: bool = false
 @export_subgroup('VS AI')
 @export var player_color: Player = Player.WHITE
 
@@ -56,22 +57,15 @@ func _ready() -> void:
 	chess_signal_bus.promote.connect(_on_signal_bus_promote)
 	chess_signal_bus.next_move.connect(_on_signal_bus_next_move)
 	chess_signal_bus.move_animation_completed.connect(_on_signal_bus_move_animation_completed)
+	chess_signal_bus.new_game.connect(_on_signal_bus_new_game)
+	chess_signal_bus.clear_board.connect(_on_signal_bus_clear_board)
+	chess_signal_bus.register_opponent.connect(_on_signal_bus_register_opponent)
 	
-	n_camera.call_deferred(
-		'set_player',
-		_current_player if game_type == GameType.LOCAL_MULTIPLAYER else player_color,
-		true
-	)
+	# Clear board if start_cleared is enabled
+	if start_cleared:
+		n_board.clear_board()
 	
-	# Generate starting position if a generator is assigned and active
-	if starting_position_generator:
-		if starting_position_generator.active:
-			starting_position_generator.generate_position(_board_tiles)
-			_current_player = starting_position_generator.player_to_move
-		# Free the generator it will not be needed anymore
-		# Remove this in the future if resets or new positions are implemented
-		starting_position_generator.queue_free()
-	
+	# Set up AI opponent if specified
 	if game_type == GameType.VS_AI:
 		opponent_controller.player_color = ChessUtils.get_opposing_player(player_color)
 		
@@ -79,26 +73,12 @@ func _ready() -> void:
 		opponent_controller.move_calculated.connect(_on_opponent_move_calculated)
 		
 		if chess_opponent:
-			await register_opponent(chess_opponent)
+			await _register_opponent(chess_opponent)
 		else:
 			push_warning('Chess controller with game type VS_AI initialized without a chess opponent set.')
-		
-		if opponent_controller.player_color == Player.WHITE:
-			opponent_controller.request_move(_board_tiles, _move_idx, _halfmove_clock)
 	
-	# Record the starting position for threefold repetition tracking
-	_record_position()
-	
-	# Safety check for positions starting with check/checkmate/stalemate
-	_check_for_game_over(_current_player)
-	
-	# Emit game started event
-	var metadata := {
-		"game_type": game_type,
-		"player_color": player_color if game_type == GameType.VS_AI else -1,
-		"starting_player": _current_player
-	}
-	chess_signal_bus.game_started.emit(metadata)
+	# Prevent interaction until new_game signal is received
+	_game_over = true
 
 
 func _input(event: InputEvent) -> void:
@@ -106,14 +86,75 @@ func _input(event: InputEvent) -> void:
 		_swap_player()
 
 
-func register_opponent(opponent: ChessOpponentComponent) -> void:
-	print('[ChessController] New opponent registered: %s' % chess_opponent)
+func _register_opponent(opponent: ChessOpponentComponent) -> void:
+	print('[ChessController] New opponent registered: %s' % opponent)
 	chess_opponent = opponent
 	
 	if not opponent_controller.initialized:
 		await opponent_controller.initialize()
 	
 	opponent_controller.register_opponent(opponent)
+
+
+func _reset_game_state() -> void:
+	_current_player = Player.WHITE
+	_move_idx = 0
+	_halfmove_clock = 0
+	_position_history.clear()
+	_locked = false
+	_game_over = false
+	_piece_selected = false
+	_selected_piece_tile = null
+	_legal_moves.clear()
+	_pending_promotion_move = null
+	_pending_promotion_player = Player.WHITE
+
+
+func _on_signal_bus_new_game(metadata: Dictionary) -> void:
+	print('[ChessController] New game starting...')
+	
+	# Handle metadata for player color
+	if metadata.has("flip_sides") and metadata.flip_sides:
+		player_color = ChessUtils.get_opposing_player(player_color)
+		print('[ChessController] Flipped sides - now playing as %s' % Player.keys()[player_color])
+	elif metadata.has("player_color"):
+		player_color = metadata.player_color
+		print('[ChessController] Set player color to %s' % Player.keys()[player_color])
+	
+	_reset_game_state()
+	
+	# Generate starting position
+	if starting_position_generator:
+		starting_position_generator.generate_position(_board_tiles)
+		_current_player = starting_position_generator.player_to_move
+	else:
+		push_warning('No starting position generator assigned, board will remain as is')
+	
+	# Reset camera
+	n_camera.set_player(
+		_current_player if game_type == GameType.LOCAL_MULTIPLAYER else player_color,
+		true
+	)
+	
+	# Set up AI opponent if needed
+	if game_type == GameType.VS_AI:
+		opponent_controller.player_color = ChessUtils.get_opposing_player(player_color)
+		
+		# Request move if AI plays first
+		if opponent_controller.player_color == Player.WHITE:
+			opponent_controller.request_move(_board_tiles, _move_idx, _halfmove_clock)
+	
+	# Record starting position for threefold repetition
+	_record_position()
+	
+	var game_metadata := {
+		"game_type": game_type,
+		"player_color": player_color if game_type == GameType.VS_AI else -1,
+		"starting_player": _current_player
+	}
+	chess_signal_bus.game_started.emit(game_metadata)
+	
+	print('[ChessController] New game started successfully')
 
 
 func _on_signal_bus_promote(to_piece: ChessPiece.Type) -> void:
@@ -519,3 +560,12 @@ func _on_opponent_move_calculated(uci_move: String) -> void:
 	var move: ChessMove = ChessUtils.uci_to_chess_move(uci_move, _board_tiles)
 	print('[ChessController] AI opponent: Move calculated - %s' % move)
 	_execute_chess_move(move)
+
+
+func _on_signal_bus_register_opponent(opponent: ChessOpponentComponent) -> void:
+	await _register_opponent(opponent)
+
+
+func _on_signal_bus_clear_board() -> void:
+	n_board.clear_board()
+	print('[ChessController] Cleared board')

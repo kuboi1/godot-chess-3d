@@ -22,7 +22,9 @@ signal move_animation_requested(piece: ChessPiece, from_tile: ChessBoardTile, to
 signal capture_animation_requested(piece: ChessPiece, from_tile: ChessBoardTile)
 
 # To controller
+signal clear_board
 signal new_game(metadata: Dictionary)
 signal next_move
 signal promote(to_piece: ChessPiece.Type)
 signal move_animation_completed
+signal register_opponent(opponent: ChessOpponentComponent)

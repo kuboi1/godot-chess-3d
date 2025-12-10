@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3 uid="uid://d1uudo8essa02"]
+[gd_scene load_steps=18 format=3 uid="uid://d1uudo8essa02"]
 
 [ext_resource type="PackedScene" uid="uid://btdpfqmj8sw0b" path="res://scenes/Chess/Controller/chess_controller.tscn" id="1_sugp2"]
 [ext_resource type="Script" uid="uid://cux7epnc60bt0" path="res://scenes/main.gd" id="1_tipki"]
@@ -7,9 +7,47 @@
 [ext_resource type="PackedScene" uid="uid://bkwb75dd6wti4" path="res://scenes/Chess/Opponent/Component/chess_opponent_component.tscn" id="3_sugp2"]
 [ext_resource type="Script" uid="uid://nffv22vwjr10" path="res://scenes/Chess/Opponent/Component/Opening/chess_opening.gd" id="4_tbgi4"]
 [ext_resource type="Resource" uid="uid://c8j6shnte2tja" path="res://scenes/Chess/Opponent/Component/Opening/Openings/queens_gambit_opening.tres" id="5_tefeu"]
+[ext_resource type="Script" uid="uid://d26fqpjk5yt8i" path="res://scenes/Chess/Services/PositionConvertor/chess_position.gd" id="5_ya4ey"]
 [ext_resource type="Resource" uid="uid://bh8kv2jmr5xpa" path="res://scenes/Chess/Opponent/Component/Opening/Openings/kings_indian_attack_opening.tres" id="6_tefeu"]
 [ext_resource type="Resource" uid="uid://c1mwv3h8qyapa" path="res://scenes/Chess/Opponent/Component/Opening/Openings/kings_indian_defense.tres" id="7_o6xl0"]
 [ext_resource type="PackedScene" uid="uid://cssuc6egkc2l5" path="res://scenes/UI/PromotionButton/promotion_button.tscn" id="9_85g3d"]
+
+[sub_resource type="Resource" id="Resource_eb6dy"]
+script = ExtResource("5_ya4ey")
+position = "e4"
+metadata/_custom_type_script = "uid://d26fqpjk5yt8i"
+
+[sub_resource type="Resource" id="Resource_trceg"]
+script = ExtResource("5_ya4ey")
+position = "e8"
+player = 1
+metadata/_custom_type_script = "uid://d26fqpjk5yt8i"
+
+[sub_resource type="Resource" id="Resource_a8y0u"]
+script = ExtResource("5_ya4ey")
+position = "e5"
+piece = 4
+metadata/_custom_type_script = "uid://d26fqpjk5yt8i"
+
+[sub_resource type="Resource" id="Resource_jkv2x"]
+script = ExtResource("5_ya4ey")
+position = "e7"
+piece = 4
+player = 1
+metadata/_custom_type_script = "uid://d26fqpjk5yt8i"
+
+[sub_resource type="Resource" id="Resource_jbj1t"]
+script = ExtResource("5_ya4ey")
+position = "d4"
+piece = 3
+metadata/_custom_type_script = "uid://d26fqpjk5yt8i"
+
+[sub_resource type="Resource" id="Resource_muem4"]
+script = ExtResource("5_ya4ey")
+position = "d8"
+piece = 3
+player = 1
+metadata/_custom_type_script = "uid://d26fqpjk5yt8i"
 
 [node name="Main" type="Node3D"]
 script = ExtResource("1_tipki")
@@ -22,8 +60,7 @@ chess_opponent = NodePath("ChessOpponentComponent")
 chess_signal_bus = NodePath("../ChessSignalBus")
 
 [node name="ChessStartingPositionGenerator" parent="ChessController" instance=ExtResource("2_0wfyh")]
-active = false
-use_position = 1
+_positions = Array[ExtResource("5_ya4ey")]([SubResource("Resource_eb6dy"), SubResource("Resource_trceg"), SubResource("Resource_a8y0u"), SubResource("Resource_jkv2x"), SubResource("Resource_jbj1t"), SubResource("Resource_muem4")])
 _fen_notation_position = "4k3/1P6/8/8/8/8/8/4K3"
 
 [node name="ChessOpponentComponent" parent="ChessController" instance=ExtResource("3_sugp2")]
@@ -81,7 +118,39 @@ layout_mode = 2
 text = "KNIGHT"
 piece_type = 3
 
+[node name="StartGameContainer" type="CenterContainer" parent="UI"]
+offset_right = 1280.0
+offset_bottom = 720.0
+
+[node name="TextureRect" type="ColorRect" parent="UI/StartGameContainer"]
+custom_minimum_size = Vector2(1280, 720)
+layout_mode = 2
+color = Color(0.5372549, 0.5254902, 0.81960785, 0.5058824)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/StartGameContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="StatusLabel" type="Label" parent="UI/StartGameContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 64
+text = "CHESS!"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="StartGameButton" type="Button" parent="UI/StartGameContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "START GAME"
+
+[node name="ClearBoardButton" type="Button" parent="UI/StartGameContainer/VBoxContainer"]
+layout_mode = 2
+text = "CLEAR BOARD"
+
 [connection signal="promote" from="UI/PromotionSelect/QueenButton" to="." method="_on_promotion_button_promote"]
 [connection signal="promote" from="UI/PromotionSelect/RookButton" to="." method="_on_promotion_button_promote"]
 [connection signal="promote" from="UI/PromotionSelect/BishopButton" to="." method="_on_promotion_button_promote"]
 [connection signal="promote" from="UI/PromotionSelect/KnightButton" to="." method="_on_promotion_button_promote"]
+[connection signal="pressed" from="UI/StartGameContainer/VBoxContainer/StartGameButton" to="." method="_on_start_game_button_pressed"]
+[connection signal="pressed" from="UI/StartGameContainer/VBoxContainer/ClearBoardButton" to="." method="_on_clear_board_button_pressed"]

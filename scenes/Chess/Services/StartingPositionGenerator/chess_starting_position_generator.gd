@@ -3,20 +3,22 @@ extends Node
 
 
 enum StartingPositionType {
-	CUSTOM,
-	FEN_NOTATION
+	STANDARD,       # Standard chess starting position
+	CUSTOM,         # Custom position from ChessPosition array
+	FEN_NOTATION    # Custom position from FEN string
 }
 
+const STANDARD_STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+
 @export_category('Config')
-@export var active: bool = true
-@export var use_position: StartingPositionType = StartingPositionType.CUSTOM
-@export var player_to_move: ChessController.Player
+@export var position_type: StartingPositionType = StartingPositionType.STANDARD
 
 @export_category('Positions')
 @export_subgroup('Custom')
 @export var _positions: Array[ChessPosition] = []
+@export var _player_to_move: ChessController.Player
 @export_subgroup('Fen')
-## Only supports the first part of the string. Who's move it is is determined by the player_to_move export var
+## Full FEN string. Active player (who's move it is) will be extracted from the FEN
 @export var _fen_notation_position: String
 
 # Pieces preloads
@@ -31,9 +33,14 @@ const PIECE_SCENES = {
 
 
 func generate_position(board: Array[Array]) -> Array[Array]:
-	# Convert FEN to a piece placement array if needed
-	if use_position == StartingPositionType.FEN_NOTATION:
-		_positions = ChessPositionConvertor.fen_to_chess_positions(_fen_notation_position)
+	# Determine which position to use and extract player_to_move from FEN if applicable
+	match position_type:
+		StartingPositionType.STANDARD:
+			_positions = ChessPositionConvertor.fen_to_chess_positions(STANDARD_STARTING_FEN)
+			_player_to_move = _extract_active_player_from_fen(STANDARD_STARTING_FEN)
+		StartingPositionType.FEN_NOTATION:
+			_positions = ChessPositionConvertor.fen_to_chess_positions(_fen_notation_position)
+			_player_to_move = _extract_active_player_from_fen(_fen_notation_position)
 	
 	# Validate the placements array
 	if not _validate_positions():
@@ -110,3 +117,20 @@ func _validate_positions() -> bool:
 		return false
 	
 	return true
+
+
+func _extract_active_player_from_fen(fen: String) -> ChessController.Player:
+	# w for white, b for black
+	var fen_parts := fen.split(' ')
+	if fen_parts.size() < 2:
+		push_warning('Invalid FEN string, defaulting to WHITE to move')
+		return ChessController.Player.WHITE
+	
+	var active_color := fen_parts[1]
+	if active_color == 'w':
+		return ChessController.Player.WHITE
+	elif active_color == 'b':
+		return ChessController.Player.BLACK
+	else:
+		push_warning('Invalid active color in FEN "%s", defaulting to WHITE' % active_color)
+		return ChessController.Player.WHITE
