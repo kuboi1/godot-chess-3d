@@ -1,8 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://cssuc6egkc2l5"]
-
-[ext_resource type="Script" uid="uid://12waqlg77afo" path="res://scenes/UI/PromotionButton/promotion_button.gd" id="1_7midf"]
-
-[node name="PromotionButton" type="Button"]
-script = ExtResource("1_7midf")
-
-[connection signal="pressed" from="." to="." method="_on_pressed"]

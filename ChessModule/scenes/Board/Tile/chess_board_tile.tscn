@@ -1,0 +1,42 @@
+[gd_scene load_steps=7 format=3 uid="uid://d33tj0x1j335v"]
+
+[ext_resource type="Script" uid="uid://blbdi0jhbpurb" path="res://ChessModule/scenes/Board/Tile/chess_board_tile.gd" id="1_842r4"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_qg68c"]
+size = Vector3(1, 0, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_842r4"]
+transparency = 1
+albedo_color = Color(0.77484673, 0.23959774, 0.2954049, 0.7294118)
+emission = Color(1, 0.20784314, 1, 1)
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_att4b"]
+material = SubResource("StandardMaterial3D_842r4")
+size = Vector2(1, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_h24fv"]
+transparency = 1
+albedo_color = Color(0.18019223, 0.576959, 0.3138053, 0.73333335)
+emission = Color(1, 0.20784314, 1, 1)
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_tvv8a"]
+material = SubResource("StandardMaterial3D_h24fv")
+size = Vector2(1, 1)
+
+[node name="ChessBoardTile" type="Area3D"]
+script = ExtResource("1_842r4")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_qg68c")
+
+[node name="HighlightCapture" type="MeshInstance3D" parent="."]
+visible = false
+mesh = SubResource("PlaneMesh_att4b")
+
+[node name="HighlightNormal" type="MeshInstance3D" parent="."]
+visible = false
+mesh = SubResource("PlaneMesh_tvv8a")
+
+[connection signal="input_event" from="." to="." method="_on_input_event"]
+[connection signal="mouse_entered" from="." to="." method="_on_mouse_entered"]
+[connection signal="mouse_exited" from="." to="." method="_on_mouse_exited"]

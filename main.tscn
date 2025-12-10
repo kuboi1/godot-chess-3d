@@ -1,0 +1,124 @@
+[gd_scene load_steps=12 format=3 uid="uid://khvruuee5gwi"]
+
+[ext_resource type="Script" uid="uid://bq8eo2bkqxdu1" path="res://main.gd" id="1_7mycd"]
+[ext_resource type="PackedScene" uid="uid://byuwk3fja2tuu" path="res://ChessModule/scenes/SignalBus/chess_signal_bus.tscn" id="2_272bh"]
+[ext_resource type="PackedScene" uid="uid://btdpfqmj8sw0b" path="res://ChessModule/scenes/Controller/chess_controller.tscn" id="3_5vw27"]
+[ext_resource type="PackedScene" uid="uid://bkwb75dd6wti4" path="res://ChessModule/scenes/Opponent/Component/chess_opponent_component.tscn" id="4_kek77"]
+[ext_resource type="PackedScene" uid="uid://cyepik78pv6n7" path="res://ChessModule/scenes/Services/StartingPositionGenerator/chess_starting_position_generator.tscn" id="5_4c57u"]
+[ext_resource type="Script" uid="uid://nffv22vwjr10" path="res://ChessModule/scenes/Opponent/Component/Opening/chess_opening.gd" id="5_efxa6"]
+[ext_resource type="Resource" uid="uid://cvn8vh3j2xkpa" path="res://ChessModule/scenes/Opponent/Component/Opening/Openings/vienna_gambit_opening.tres" id="6_dg77c"]
+[ext_resource type="PackedScene" uid="uid://cssuc6egkc2l5" path="res://UI/PromotionButton/promotion_button.tscn" id="6_efxa6"]
+[ext_resource type="Resource" uid="uid://c1mwv3h8qyapa" path="res://ChessModule/scenes/Opponent/Component/Opening/Openings/kings_indian_defense.tres" id="7_ycdy4"]
+[ext_resource type="Resource" uid="uid://bqm8vh3j2xkpa" path="res://ChessModule/scenes/Opponent/Component/Opening/Openings/italian_game_opening.tres" id="8_w48qg"]
+[ext_resource type="Resource" uid="uid://bvk4niapw3xpa" path="res://ChessModule/scenes/Opponent/Component/Opening/Openings/sicilian_defense.tres" id="9_vivmo"]
+
+[node name="Main" type="Node3D"]
+script = ExtResource("1_7mycd")
+
+[node name="ChessSignalBus" parent="." instance=ExtResource("2_272bh")]
+
+[node name="SpotLight3D" type="SpotLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -0.11341132, 0.99354815, 0, -0.99354815, -0.11341132, 0, 9.10203, -1.225272)
+light_color = Color(1, 0.972549, 0.9607843, 1)
+light_energy = 16.0
+spot_range = 16.0
+spot_angle = 60.0
+
+[node name="OmniLight3D" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.176488, 1.1126056, 0.038388252)
+light_color = Color(0.9999998, 0.95753473, 0.9148577, 1)
+light_energy = 3.0
+omni_range = 12.224433
+
+[node name="ChessController" parent="." node_paths=PackedStringArray("starting_position_generator", "chess_opponent", "chess_signal_bus") instance=ExtResource("3_5vw27")]
+game_type = 0
+starting_position_generator = NodePath("ChessStartingPositionGenerator")
+chess_opponent = NodePath("ChessOpponentComponent")
+chess_signal_bus = NodePath("../ChessSignalBus")
+
+[node name="ChessOpponentComponent" parent="ChessController" instance=ExtResource("4_kek77")]
+player_name = "Gustavo"
+_openings = Array[ExtResource("5_efxa6")]([ExtResource("6_dg77c"), ExtResource("7_ycdy4"), ExtResource("8_w48qg"), ExtResource("9_vivmo")])
+
+[node name="ChessStartingPositionGenerator" parent="ChessController" instance=ExtResource("5_4c57u")]
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="PromotionSelect" type="HBoxContainer" parent="UI"]
+visible = false
+offset_left = 24.0
+offset_top = 672.0
+offset_right = 389.0
+offset_bottom = 703.0
+
+[node name="Label" type="Label" parent="UI/PromotionSelect"]
+layout_mode = 2
+text = "Promote to: "
+
+[node name="QueenButton" parent="UI/PromotionSelect" instance=ExtResource("6_efxa6")]
+layout_mode = 2
+text = "QUEEN"
+
+[node name="RookButton" parent="UI/PromotionSelect" instance=ExtResource("6_efxa6")]
+layout_mode = 2
+text = "ROOK"
+piece_type = 2
+
+[node name="BishopButton" parent="UI/PromotionSelect" instance=ExtResource("6_efxa6")]
+layout_mode = 2
+text = "BISHOP"
+piece_type = 4
+
+[node name="KnightButton" parent="UI/PromotionSelect" instance=ExtResource("6_efxa6")]
+layout_mode = 2
+text = "KNIGHT"
+piece_type = 3
+
+[node name="StartGameContainer" type="CenterContainer" parent="UI"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TextureRect" type="ColorRect" parent="UI/StartGameContainer"]
+custom_minimum_size = Vector2(1280, 720)
+layout_mode = 2
+color = Color(0.5372549, 0.5254902, 0.81960785, 0.5058824)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/StartGameContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="StatusLabel" type="Label" parent="UI/StartGameContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 64
+text = "CHESS!"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="StartGameButton" type="Button" parent="UI/StartGameContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "START GAME"
+
+[node name="SetupBoardButton" type="Button" parent="UI/StartGameContainer/VBoxContainer"]
+layout_mode = 2
+text = "SETUP BOARD"
+
+[node name="ClearBoardButton" type="Button" parent="UI/StartGameContainer/VBoxContainer"]
+layout_mode = 2
+text = "CLEAR BOARD"
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.3150031, 0.94909066, 0, -0.94909066, 0.3150031, 0, 9.035889, 3.3328762)
+current = true
+
+[connection signal="promote" from="UI/PromotionSelect/QueenButton" to="." method="_on_promotion_button_promote"]
+[connection signal="promote" from="UI/PromotionSelect/RookButton" to="." method="_on_promotion_button_promote"]
+[connection signal="promote" from="UI/PromotionSelect/BishopButton" to="." method="_on_promotion_button_promote"]
+[connection signal="promote" from="UI/PromotionSelect/KnightButton" to="." method="_on_promotion_button_promote"]
+[connection signal="pressed" from="UI/StartGameContainer/VBoxContainer/StartGameButton" to="." method="_on_start_game_button_pressed"]
+[connection signal="pressed" from="UI/StartGameContainer/VBoxContainer/SetupBoardButton" to="." method="_on_setup_board_button_pressed"]
+[connection signal="pressed" from="UI/StartGameContainer/VBoxContainer/ClearBoardButton" to="." method="_on_clear_board_button_pressed"]

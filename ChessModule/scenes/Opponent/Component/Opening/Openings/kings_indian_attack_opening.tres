@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ChessOpening" load_steps=2 format=3 uid="uid://bh8kv2jmr5xpa"]
+
+[ext_resource type="Script" uid="uid://nffv22vwjr10" path="res://ChessModule/scenes/Opponent/Component/Opening/chess_opening.gd" id="1_46hpl"]
+
+[resource]
+script = ExtResource("1_46hpl")
+moves = Array[String](["e2e4", "g1f3", "d2d3", "g2g3", "f1g2", "e1g1"])
+name = "King's Indian Attack"
+metadata/_custom_type_script = "uid://nffv22vwjr10"

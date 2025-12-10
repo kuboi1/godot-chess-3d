@@ -1,0 +1,19 @@
+[gd_scene load_steps=3 format=3 uid="uid://dosodo6vnwnuh"]
+
+[ext_resource type="Script" uid="uid://djp7xbasad0cu" path="res://ChessModule/scenes/Piece/chess_piece.gd" id="1_x3v74"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_x3v74"]
+size = Vector3(0.5878906, 1.255749, 0.5812683)
+
+[node name="ChessPiece" type="Area3D"]
+script = ExtResource("1_x3v74")
+
+[node name="CollisionShape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("BoxShape3D_x3v74")
+
+[node name="MovementComponent" type="Node" parent="."]
+
+[connection signal="input_event" from="." to="." method="_on_input_event"]
+[connection signal="mouse_entered" from="." to="." method="_on_mouse_entered"]
+[connection signal="mouse_exited" from="." to="." method="_on_mouse_exited"]
