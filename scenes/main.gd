@@ -3,6 +3,8 @@ extends Node3D
 
 @onready var chess_signal_bus: ChessSignalBus = $ChessSignalBus
 @onready var n_promotion_select: HBoxContainer = $UI/PromotionSelect
+@onready var n_start_game_container: CenterContainer = $UI/StartGameContainer
+@onready var n_status_label: Label = $UI/StartGameContainer/VBoxContainer/StatusLabel
 
 var _animation_queue: Array = []
 var _is_animating: bool = false
@@ -31,18 +33,22 @@ func _on_signal_bus_game_started(metadata: Dictionary) -> void:
 
 func _on_signal_bus_checkmate(by_player: ChessController.Player) -> void:
 	print('[Main] checkmate event received by player: %s' % ChessController.Player.keys()[by_player])
+	_handle_game_over('CHECKMATE!')
 
 
 func _on_signal_bus_resignation(by_player: ChessController.Player) -> void:
 	print('[Main] resignation event received by player: %s' % ChessController.Player.keys()[by_player])
+	_handle_game_over('RESIGN!')
 
 
 func _on_signal_bus_stalemate() -> void:
 	print('[Main] stalemate event received')
+	_handle_game_over('STALEMATE!')
 
 
 func _on_signal_bus_draw(reason: ChessUtils.DrawReason) -> void:
 	print('[Main] draw event received %s' % ChessUtils.DrawReason.keys()[reason])
+	_handle_game_over('DRAW!')
 
 
 func _on_signal_bus_player_swapped(current_player: ChessController.Player) -> void:
@@ -143,6 +149,11 @@ func _process_animation_queue() -> void:
 		tween.finished.connect(_on_animation_finished)
 
 
+func _handle_game_over(status: String) -> void:
+	n_status_label.text = status
+	n_start_game_container.show()
+
+
 func _on_animation_finished() -> void:
 	# Process next animation in queue
 	_process_animation_queue()
@@ -151,3 +162,12 @@ func _on_animation_finished() -> void:
 func _on_promotion_button_promote(to_piece: ChessPiece.Type) -> void:
 	chess_signal_bus.promote.emit(to_piece)
 	n_promotion_select.hide()
+
+
+func _on_start_game_button_pressed() -> void:
+	n_start_game_container.hide()
+	chess_signal_bus.new_game.emit({})
+
+
+func _on_clear_board_button_pressed() -> void:
+	chess_signal_bus.clear_board.emit()

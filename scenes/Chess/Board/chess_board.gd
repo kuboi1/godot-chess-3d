@@ -38,3 +38,10 @@ func _on_tile_end_hover(tile: ChessBoardTile) -> void:
 
 func _on_tile_clicked(tile: ChessBoardTile) -> void:
 	tile_clicked.emit(tile)
+
+
+func clear_board() -> void:
+	for row in tiles:
+		for tile: ChessBoardTile in row:
+			if tile.has_piece():
+				tile.piece.queue_free()
