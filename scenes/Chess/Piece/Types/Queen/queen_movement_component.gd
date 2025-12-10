@@ -5,6 +5,7 @@ extends ChessPieceMovementComponent
 @onready var rook_component: RookMovementComponent = self.get_node('RookComponent')
 @onready var bishop_component: BishopMovementComponent = self.get_node('BishopComponent')
 
+
 # The queen movement combines the rook and bishop movements
 func _get_piece_legal_moves(
 	current_pos: Vector2i,

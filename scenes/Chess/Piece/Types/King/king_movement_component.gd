@@ -12,43 +12,36 @@ func _get_piece_legal_moves(
 ) -> Array[ChessMove]:
 	var legal_moves: Array[ChessMove] = []
 	
-	# King can move one square in any direction
 	var king_moves: Array[Vector2i] = [
-		Vector2i(0, 1),    # Up
-		Vector2i(0, -1),   # Down
-		Vector2i(1, 0),    # Right
-		Vector2i(-1, 0),   # Left
-		Vector2i(1, 1),    # Up-Right (diagonal)
-		Vector2i(1, -1),   # Down-Right (diagonal)
-		Vector2i(-1, 1),   # Up-Left (diagonal)
-		Vector2i(-1, -1)   # Down-Left (diagonal)
+		Vector2i(0, 1),
+		Vector2i(0, -1),
+		Vector2i(1, 0),
+		Vector2i(-1, 0),
+		Vector2i(1, 1),
+		Vector2i(1, -1),
+		Vector2i(-1, 1),
+		Vector2i(-1, -1)
 	]
 	
-	# Check each possible king move
 	for move in king_moves:
 		var check_pos = current_pos + move
 		
 		if not _is_in_board_bounds(check_pos, board_dimensions):
-			continue  # Out of bounds, skip this move
+			continue
 		
 		# check_tile: ChessBoardTile|_SimulatedTile
 		var check_tile = board[check_pos.y][check_pos.x]
 		
 		if not check_tile.has_piece():
-			# Empty tile -> legal move
 			legal_moves.append(ChessMove.new(current_pos, check_pos))
 		elif check_tile.piece.owner_player != piece_owner:
-			# Enemy piece, can capture it -> legal move
 			legal_moves.append(ChessMove.new(current_pos, check_pos, ChessMove.Type.CAPTURE))
 	
-	# Castling logic
 	if not has_moved():
-		# Kingside castling (right)
 		var kingside_castling_move = _check_castling_move(current_pos, board, piece_owner, true, _move_idx, validate_checks)
 		if kingside_castling_move != null:
 			legal_moves.append(kingside_castling_move)
 		
-		# Queenside castling (left)
 		var queenside_castling_move = _check_castling_move(current_pos, board, piece_owner, false, _move_idx, validate_checks)
 		if queenside_castling_move != null:
 			legal_moves.append(queenside_castling_move)
@@ -73,12 +66,10 @@ func _check_castling_move(
 	var king_destination_x: int
 	
 	if kingside:
-		# Rook on the right
 		rook_x = board_width - 1
 		direction = 1
 		king_destination_x = current_pos.x + 2
 	else:
-		# Rook on the left
 		rook_x = 0
 		direction = -1
 		king_destination_x = current_pos.x - 2
@@ -86,7 +77,7 @@ func _check_castling_move(
 	# rook_tile: ChessBoardTile|_SimulatedTile
 	var rook_tile = board[current_pos.y][rook_x]
 	if not rook_tile.has_piece():
-		return null  # No rook
+		return null
 	
 	# Piece on tile has to:
 	# - be a rook
@@ -94,13 +85,12 @@ func _check_castling_move(
 	# - not have moved yet
 	var rook_piece: ChessPiece = rook_tile.piece
 	if (
-		rook_piece.type != ChessPiece.Type.ROOK or 
-		rook_piece.owner_player != piece_owner or 
+		rook_piece.type != ChessPiece.Type.ROOK or
+		rook_piece.owner_player != piece_owner or
 		rook_piece.has_moved()
 	):
 		return null
 	
-	# Check if the path between king and rook is clear
 	var x = current_pos.x + direction
 	while x != rook_x:
 		# check_tile: ChessBoardTile|_SimulatedTile

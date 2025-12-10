@@ -23,11 +23,7 @@ signal clicked
 
 @onready var pre_select_mat: StandardMaterial3D = preload('res://scenes/Chess/Piece/assets/materials/cp_select_material.tres')
 
-var _movement_component: ChessPieceMovementComponent
-var _mesh: MeshInstance3D
-
 var board_postion: Vector2i
-
 var selected: bool = false :
 	set(value):
 		selected = value
@@ -39,6 +35,10 @@ var last_move_idx: int :
 	get():
 		return _movement_component.last_move_idx
 
+var _movement_component: ChessPieceMovementComponent
+var _mesh: MeshInstance3D
+
+
 func _ready() -> void:
 	var initialized = _init_piece()
 	if not initialized:
@@ -49,6 +49,10 @@ func _ready() -> void:
 		_mesh.material_override = load(WHITE_MAT_PATH)
 	else:
 		_mesh.material_override = load(BLACK_MAT_PATH)
+
+
+func _to_string() -> String:
+	return 'ChessPiece:<%s:%s>' % [Type.keys()[type], ChessController.Player.keys()[owner_player]]
 
 
 func _init_piece() -> bool:
@@ -85,19 +89,15 @@ func _get_mesh_from_model() -> MeshInstance3D:
 	return null
 
 
-func _to_string() -> String:
-	return 'ChessPiece:<%s:%s>' % [Type.keys()[type], ChessController.Player.keys()[owner_player]]
-
-
 func get_legal_moves(
-	board: Array[Array], 
-	move_idx: int, 
+	board: Array[Array],
+	move_idx: int,
 	validate_checks: bool = true
 ) -> Array[ChessMove]:
 	return _movement_component.calculate_legal_moves(
-		board_postion, 
-		board, 
-		move_idx, 
+		board_postion,
+		board,
+		move_idx,
 		validate_checks
 	)
 

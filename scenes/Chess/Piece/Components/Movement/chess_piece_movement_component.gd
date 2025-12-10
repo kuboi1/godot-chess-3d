@@ -8,21 +8,20 @@ var last_move_idx: int = 0
 
 
 func calculate_legal_moves(
-	current_pos: Vector2i, 
-	board: Array[Array], 
+	current_pos: Vector2i,
+	board: Array[Array],
 	move_idx: int,
 	validate_checks: bool = true
 ) -> Array[ChessMove]:
 	# Shared logic
-	# Can be overwritten directly in derived components if shared logic is not needed
-	
+	# Can be overriden directly in derived components if shared logic is not needed
+
 	var board_dimension := Vector2i(board.size(), board[0].size())
 	
 	# Safety check for empty board
 	if board_dimension.x == 0 or board_dimension.y == 0:
 		return []
 	
-	# Get the current piece's owner
 	# current_tile: ChessBoardTile|_SimulatedTile
 	var current_tile = board[current_pos.y][current_pos.x]
 	if not current_tile.has_piece():
@@ -30,7 +29,6 @@ func calculate_legal_moves(
 	
 	var piece_owner: ChessController.Player = current_tile.piece.owner_player
 	
-	# Get piece specific legal moves
 	var legal_moves = _get_piece_legal_moves(
 		current_pos,
 		board,
@@ -63,14 +61,13 @@ func has_moved() -> bool:
 
 func _is_in_board_bounds(pos: Vector2i, board_dimensions: Vector2i) -> bool:
 	return (
-		pos.x >= 0 and 
-		pos.x < board_dimensions.x and 
-		pos.y >= 0 and 
+		pos.x >= 0 and
+		pos.x < board_dimensions.x and
+		pos.y >= 0 and
 		pos.y < board_dimensions.y
 	)
 
 
-# Filters out moves that would leave the king in check
 func _filter_out_check_moves(
 	moves: Array[ChessMove],
 	current_pos: Vector2i,
@@ -81,7 +78,6 @@ func _filter_out_check_moves(
 	var legal_moves: Array[ChessMove] = []
 	
 	for move in moves:
-		# Simulate the move
 		var simulated_board := ChessBoardUtils.simulate_move(
 			current_pos,
 			move.to,
@@ -89,21 +85,18 @@ func _filter_out_check_moves(
 			move_idx
 		)
 		
-		# Check if the king is in check after this move
 		var is_in_check := ChessBoardUtils.is_king_in_check(
 			piece_owner,
 			simulated_board,
 			move_idx
 		)
 		
-		# Only add moves that don't leave the king in check
 		if not is_in_check:
 			legal_moves.append(move)
 	
 	return legal_moves
 
 
-# PIECE SPECIFIC LOGIC HERE
 @warning_ignore('unused_parameter')
 func _get_piece_legal_moves(
 	current_pos: Vector2i,
@@ -113,5 +106,5 @@ func _get_piece_legal_moves(
 	move_idx: int,
 	validate_checks: bool
 ) -> Array[ChessMove]:
-	# Implementation in derived components
+	# Override in derived components
 	return []

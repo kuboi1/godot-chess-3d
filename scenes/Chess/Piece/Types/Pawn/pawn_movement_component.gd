@@ -12,10 +12,7 @@ func _get_piece_legal_moves(
 ) -> Array[ChessMove]:
 	var legal_moves: Array[ChessMove] = []
 	
-	# Determine forward direction based on player
 	var forward_direction: int = 1 if piece_owner == ChessController.Player.WHITE else -1
-	
-	# Determine ranks
 	var starting_rank = 1 if piece_owner == ChessController.Player.WHITE else board_dimensions.y - 2
 	var promotion_rank: int = board_dimensions.y - 1 if piece_owner == ChessController.Player.WHITE else 0
 	
@@ -25,7 +22,6 @@ func _get_piece_legal_moves(
 		# one_forward_tile: ChessBoardTile|_SimulatedTile
 		var one_forward_tile = board[one_forward.y][one_forward.x]
 		if not one_forward_tile.has_piece():
-			# Check for promotion
 			if _is_promotion_pos(one_forward, promotion_rank):
 				legal_moves.append(ChessMove.new(current_pos, one_forward, ChessMove.Type.PROMOTION))
 			else:
@@ -42,8 +38,8 @@ func _get_piece_legal_moves(
 	
 	# Diagonal captures
 	var diagonal_offsets: Array[Vector2i] = [
-		Vector2i(1, forward_direction),   # Right diagonal
-		Vector2i(-1, forward_direction)   # Left diagonal
+		Vector2i(1, forward_direction),
+		Vector2i(-1, forward_direction)
 	]
 	
 	for offset in diagonal_offsets:
@@ -52,13 +48,11 @@ func _get_piece_legal_moves(
 			# diagonal_tile: ChessBoardTile|_SimulatedTile
 			var diagonal_tile = board[diagonal_pos.y][diagonal_pos.x]
 			if diagonal_tile.has_piece() and diagonal_tile.piece.owner_player != piece_owner:
-				# Check for promotion
 				if _is_promotion_pos(diagonal_pos, promotion_rank):
 					legal_moves.append(ChessMove.new(current_pos, diagonal_pos, ChessMove.Type.PROMOTION_CAPTURE))
 				else:
 					legal_moves.append(ChessMove.new(current_pos, diagonal_pos, ChessMove.Type.CAPTURE))
 	
-	# En passant
 	var en_passant_moves = _check_en_passant(current_pos, board, board_dimensions, piece_owner, forward_direction, move_idx)
 	legal_moves.append_array(en_passant_moves)
 	
@@ -93,7 +87,6 @@ func _check_en_passant(
 			continue
 		
 		var adjacent_piece = adjacent_tile.piece
-		# Check en passant conditions
 		if (
 			adjacent_piece.owner_player != piece_owner and
 			adjacent_piece.type == ChessPiece.Type.PAWN and
