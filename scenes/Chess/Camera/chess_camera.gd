@@ -45,12 +45,24 @@ const POSITIONS = {
 signal animation_started
 signal animation_finished
 
-@onready var n_spring_arm = $SpringArm3D
+@onready var _spring_arm: SpringArm3D = $SpringArm3D
+@onready var _camera: Camera3D = $SpringArm3D/Camera3D
 
 var _current_position: Position = Position.WHITE_DEFAULT
 var _current_player: ChessController.Player = ChessController.Player.WHITE
 
 var _position_locked: bool = false
+
+var current: bool:
+	get:
+		return _camera.current
+	set(value):
+		_camera.current = value
+		set_process_input(value)
+
+
+func _ready() -> void:
+	current = false
 
 
 func _input(event: InputEvent) -> void:
@@ -73,9 +85,13 @@ func _input(event: InputEvent) -> void:
 		_change_position_to_player(overhead_timing)
 
 
-func set_player(player: ChessController.Player, init: bool = false) -> void:
+func set_player(player: ChessController.Player) -> void:
 	_current_player = player
-	_change_position_to_player(player_pos_timing, init)
+	_change_position_to_player(player_pos_timing)
+
+
+func get_target_transform() -> Transform3D:
+	return _camera.global_transform
 
 
 func _change_position(to: Position, timing: float) -> void:
@@ -90,13 +106,13 @@ func _change_position(to: Position, timing: float) -> void:
 	
 	rotation_tween.finished.connect(_on_position_change_finished)
 	
-	length_tween.tween_property(n_spring_arm, 'spring_length', POSITIONS[to]['arm_length'], timing)
-	rotation_tween.tween_property(n_spring_arm, 'rotation', POSITIONS[to]['rotation'], timing)
+	length_tween.tween_property(_spring_arm, 'spring_length', POSITIONS[to]['arm_length'], timing)
+	rotation_tween.tween_property(_spring_arm, 'rotation', POSITIONS[to]['rotation'], timing)
 	
 	animation_started.emit()
 
 
-func _change_position_to_player(timing: float, init: bool = false) -> void:
+func _change_position_to_player(timing: float) -> void:
 	var pos: Position
 	match _current_player:
 		ChessController.Player.WHITE:
@@ -105,10 +121,6 @@ func _change_position_to_player(timing: float, init: bool = false) -> void:
 			pos = Position.BLACK_DEFAULT
 		_:
 			return
-	
-	if init:
-		n_spring_arm.spring_length = STARTING_POSITIONS[pos]['arm_length']
-		n_spring_arm.rotation = STARTING_POSITIONS[pos]['rotation']
 	
 	_change_position(pos, timing)
 
