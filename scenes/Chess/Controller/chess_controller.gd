@@ -1,6 +1,7 @@
 class_name ChessController
 extends Node3D
 
+
 enum GameType {
 	VS_AI,
 	LOCAL_MULTIPLAYER
@@ -48,12 +49,10 @@ var _pending_promotion_player: Player
 
 
 func _ready() -> void:
-	# Validate signal bus is set
 	if not chess_signal_bus:
 		push_error('ChessController requires chess_signal_bus to be set!')
 		return
 	
-	# Connect to signal bus commands
 	chess_signal_bus.promote.connect(_on_signal_bus_promote)
 	chess_signal_bus.next_move.connect(_on_signal_bus_next_move)
 	chess_signal_bus.move_animation_completed.connect(_on_signal_bus_move_animation_completed)
@@ -61,11 +60,9 @@ func _ready() -> void:
 	chess_signal_bus.clear_board.connect(_on_signal_bus_clear_board)
 	chess_signal_bus.register_opponent.connect(_on_signal_bus_register_opponent)
 	
-	# Clear board if start_cleared is enabled
 	if start_cleared:
 		n_board.clear_board()
 	
-	# Set up AI opponent if specified
 	if game_type == GameType.VS_AI:
 		opponent_controller.player_color = ChessUtils.get_opposing_player(player_color)
 		
@@ -110,86 +107,9 @@ func _reset_game_state() -> void:
 	_pending_promotion_player = Player.WHITE
 
 
-func _on_signal_bus_new_game(metadata: Dictionary) -> void:
-	print('[ChessController] New game starting...')
-	
-	# Handle metadata for player color
-	if metadata.has("flip_sides") and metadata.flip_sides:
-		player_color = ChessUtils.get_opposing_player(player_color)
-		print('[ChessController] Flipped sides - now playing as %s' % Player.keys()[player_color])
-	elif metadata.has("player_color"):
-		player_color = metadata.player_color
-		print('[ChessController] Set player color to %s' % Player.keys()[player_color])
-	
-	_reset_game_state()
-	
-	# Generate starting position
-	if starting_position_generator:
-		starting_position_generator.generate_position(_board_tiles)
-		_current_player = starting_position_generator.player_to_move
-	else:
-		push_warning('No starting position generator assigned, board will remain as is')
-	
-	# Reset camera
-	n_camera.set_player(
-		_current_player if game_type == GameType.LOCAL_MULTIPLAYER else player_color,
-		true
-	)
-	
-	# Set up AI opponent if needed
-	if game_type == GameType.VS_AI:
-		opponent_controller.player_color = ChessUtils.get_opposing_player(player_color)
-		
-		# Request move if AI plays first
-		if opponent_controller.player_color == Player.WHITE:
-			opponent_controller.request_move(_board_tiles, _move_idx, _halfmove_clock)
-	
-	# Record starting position for threefold repetition
-	_record_position()
-	
-	var game_metadata := {
-		"game_type": game_type,
-		"player_color": player_color if game_type == GameType.VS_AI else -1,
-		"starting_player": _current_player
-	}
-	chess_signal_bus.game_started.emit(game_metadata)
-	
-	print('[ChessController] New game started successfully')
-
-
-func _on_signal_bus_promote(to_piece: ChessPiece.Type) -> void:
-	if not _pending_promotion_move:
-		push_error('Promotion signal received but no pending promotion!')
-		return
-	
-	print('[ChessController] Completing promotion to %s' % ChessPiece.Type.keys()[to_piece])
-	
-	# Free the pawn
-	if _selected_piece_tile.has_piece():
-		_selected_piece_tile.piece.queue_free()
-	
-	# Create the promoted piece
-	var promoted_piece := _create_promoted_piece(to_piece, _pending_promotion_player)
-	
-	# Place the piece on the selected tile it will get moved in _finalize_move
-	_selected_piece_tile.piece = promoted_piece
-	
-	# Finalize the move
-	_finalize_move(_pending_promotion_move, promoted_piece)
-	
-	# Clear pending promotion state
-	_pending_promotion_move = null
-
-
-func _on_signal_bus_next_move() -> void:
-	if not _game_over:
-		_swap_player()
-
-
 func _swap_player() -> void:
 	_current_player = Player.BLACK if _current_player == Player.WHITE else Player.WHITE
 	
-	# Emit player swapped event
 	chess_signal_bus.player_swapped.emit(_current_player)
 	
 	if game_type == GameType.LOCAL_MULTIPLAYER:
@@ -242,10 +162,8 @@ func _execute_chess_move(move: ChessMove) -> void:
 	_locked = true
 	to_tile.highlight(false)
 	
-	# Handle special moves
 	if not move.is_normal():
 		if move.is_capture():
-			# Emit piece captured event and request capture animation
 			var captured_piece = to_tile.piece
 			chess_signal_bus.piece_captured.emit(captured_piece, to_tile)
 			chess_signal_bus.capture_animation_requested.emit(captured_piece, to_tile)
@@ -279,7 +197,6 @@ func _finalize_move(move: ChessMove, piece: ChessPiece) -> void:
 	# Move the main piece (king for castling) and request animation
 	_move_piece(piece, from_tile, to_tile)
 	
-	# If castling, move the rook after the king
 	if move.type == ChessMove.Type.CASTLE:
 		_execute_castle(move)
 	
@@ -294,13 +211,11 @@ func _finalize_move(move: ChessMove, piece: ChessPiece) -> void:
 	
 	_move_idx += 1
 	
-	# Record the current position for threefold repetition detection
+	# Record the current position for threefold repetition
 	_record_position()
 	
-	# Emit move executed event
 	chess_signal_bus.move_executed.emit(move, piece.owner_player)
 	
-	# Check if the game is over for the opposing player after the move
 	_check_for_game_over(ChessUtils.get_opposing_player(_current_player))
 	
 	_deselect_piece(piece)
@@ -343,7 +258,6 @@ func _execute_en_passant(move: ChessMove) -> void:
 	var captured_piece_pos: Vector2i = captured_piece.board_position
 	var captured_piece_tile: ChessBoardTile = _board_tiles[captured_piece_pos.y][captured_piece_pos.x]
 	
-	# Request capture animation
 	chess_signal_bus.capture_animation_requested.emit(captured_piece, captured_piece_tile)
 
 
@@ -393,17 +307,14 @@ func _move_piece(
 	to_tile.piece = piece
 	piece.register_move(_move_idx)
 	
-	# Request animation through signal bus
 	chess_signal_bus.move_animation_requested.emit(piece, from_tile, to_tile)
 
 
 func _check_for_game_over(for_player: Player) -> void:
-	# Check for draw
 	var is_draw := _check_for_draw()
 	if is_draw:
 		return
 	
-	# Check if the player is in check and if they have a legal move left
 	var is_player_in_check := ChessBoardUtils.is_king_in_check(
 		for_player,
 		_board_tiles,
@@ -427,26 +338,6 @@ func _check_for_game_over(for_player: Player) -> void:
 		var opposing_player := ChessUtils.get_opposing_player(for_player)
 		print('[ChessController] CHECK BY %s' % Player.keys()[opposing_player])
 		chess_signal_bus.check.emit(opposing_player)
-
-
-func _get_position_key() -> String:
-	# Generate position key from first 4 FEN fields
-	var fen := ChessPositionConvertor.board_tiles_to_fen(
-		_board_tiles,
-		_current_player,
-		_move_idx,
-		_halfmove_clock
-	)
-	var fen_parts := fen.split(' ')
-	return ' '.join(fen_parts.slice(0, 4))
-
-
-func _record_position() -> void:
-	var position_key := _get_position_key()
-	if position_key in _position_history:
-		_position_history[position_key] += 1
-	else:
-		_position_history[position_key] = 1
 
 
 func _check_for_draw() -> bool:
@@ -473,6 +364,26 @@ func _check_for_draw() -> bool:
 		return true
 	
 	return false
+
+
+func _record_position() -> void:
+	var position_key := _get_position_key()
+	if position_key in _position_history:
+		_position_history[position_key] += 1
+	else:
+		_position_history[position_key] = 1
+
+
+func _get_position_key() -> String:
+	# Generate position key from first 4 FEN fields
+	var fen := ChessPositionConvertor.board_tiles_to_fen(
+		_board_tiles,
+		_current_player,
+		_move_idx,
+		_halfmove_clock
+	)
+	var fen_parts := fen.split(' ')
+	return ' '.join(fen_parts.slice(0, 4))
 
 
 func _is_players_turn() -> bool:
@@ -551,6 +462,7 @@ func _on_signal_bus_move_animation_completed() -> void:
 	if not _game_over:
 		chess_signal_bus.turn_completed.emit()
 
+# OPPONENT SIGNALS
 
 func _on_opponent_thinking_started() -> void:
 	print('[ChessController] AI opponent: Thinking started')
@@ -560,6 +472,76 @@ func _on_opponent_move_calculated(uci_move: String) -> void:
 	var move: ChessMove = ChessUtils.uci_to_chess_move(uci_move, _board_tiles)
 	print('[ChessController] AI opponent: Move calculated - %s' % move)
 	_execute_chess_move(move)
+
+# SIGNAL BUS SIGNALS
+
+func _on_signal_bus_new_game(metadata: Dictionary) -> void:
+	print('[ChessController] New game starting...')
+	
+	# Handle metadata for player color
+	if metadata.has("flip_sides") and metadata.flip_sides:
+		player_color = ChessUtils.get_opposing_player(player_color)
+		print('[ChessController] Flipped sides - now playing as %s' % Player.keys()[player_color])
+	elif metadata.has("player_color"):
+		player_color = metadata.player_color
+		print('[ChessController] Set player color to %s' % Player.keys()[player_color])
+	
+	_reset_game_state()
+	
+	if starting_position_generator:
+		starting_position_generator.generate_position(_board_tiles)
+		_current_player = starting_position_generator.player_to_move
+	else:
+		push_warning('No starting position generator assigned, board will remain as is')
+	
+	n_camera.set_player(
+		_current_player if game_type == GameType.LOCAL_MULTIPLAYER else player_color,
+		true
+	)
+	
+	if game_type == GameType.VS_AI:
+		opponent_controller.player_color = ChessUtils.get_opposing_player(player_color)
+		
+		# Request move if AI plays first
+		if opponent_controller.player_color == Player.WHITE:
+			opponent_controller.request_move(_board_tiles, _move_idx, _halfmove_clock)
+	
+	# Record starting position for threefold repetition
+	_record_position()
+	
+	var game_metadata := {
+		"game_type": game_type,
+		"player_color": player_color if game_type == GameType.VS_AI else -1,
+		"starting_player": _current_player
+	}
+	chess_signal_bus.game_started.emit(game_metadata)
+	
+	print('[ChessController] New game started successfully')
+
+
+func _on_signal_bus_promote(to_piece: ChessPiece.Type) -> void:
+	if not _pending_promotion_move:
+		push_error('Promotion signal received but no pending promotion!')
+		return
+	
+	print('[ChessController] Completing promotion to %s' % ChessPiece.Type.keys()[to_piece])
+	
+	if _selected_piece_tile.has_piece():
+		_selected_piece_tile.piece.queue_free()
+	
+	var promoted_piece := _create_promoted_piece(to_piece, _pending_promotion_player)
+	
+	# Place the piece on the selected tile it will get moved in _finalize_move
+	_selected_piece_tile.piece = promoted_piece
+	
+	_finalize_move(_pending_promotion_move, promoted_piece)
+	
+	_pending_promotion_move = null
+
+
+func _on_signal_bus_next_move() -> void:
+	if not _game_over:
+		_swap_player()
 
 
 func _on_signal_bus_register_opponent(opponent: ChessOpponentComponent) -> void:

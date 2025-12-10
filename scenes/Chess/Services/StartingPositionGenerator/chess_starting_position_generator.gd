@@ -16,7 +16,7 @@ const STANDARD_STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQk
 @export_category('Positions')
 @export_subgroup('Custom')
 @export var _positions: Array[ChessPosition] = []
-@export var _player_to_move: ChessController.Player
+@export var player_to_move: ChessController.Player
 @export_subgroup('Fen')
 ## Full FEN string. Active player (who's move it is) will be extracted from the FEN
 @export var _fen_notation_position: String
@@ -37,10 +37,10 @@ func generate_position(board: Array[Array]) -> Array[Array]:
 	match position_type:
 		StartingPositionType.STANDARD:
 			_positions = ChessPositionConvertor.fen_to_chess_positions(STANDARD_STARTING_FEN)
-			_player_to_move = _extract_active_player_from_fen(STANDARD_STARTING_FEN)
+			player_to_move = _extract_active_player_from_fen(STANDARD_STARTING_FEN)
 		StartingPositionType.FEN_NOTATION:
 			_positions = ChessPositionConvertor.fen_to_chess_positions(_fen_notation_position)
-			_player_to_move = _extract_active_player_from_fen(_fen_notation_position)
+			player_to_move = _extract_active_player_from_fen(_fen_notation_position)
 	
 	# Validate the placements array
 	if not _validate_positions():
@@ -88,26 +88,22 @@ func _validate_positions() -> bool:
 			push_error('One or more placements in the placements array was not assigned properly')
 			return false
 		
-		# Check if position is valid
 		var board_pos = ChessUtils.chess_position_to_board_position(placement.position)
 		if board_pos == Vector2i(-1, -1):
 			push_error('Invalid placement: Position "%s" is not a valid chess position' % placement.position)
 			return false
 		
-		# Check for duplicate positions
 		if placement.position in occupied_positions:
 			push_error('Invalid placement: Position "%s" has multiple pieces' % placement.position)
 			return false
 		occupied_positions[placement.position] = true
 		
-		# Count kings
 		if placement.piece == ChessPiece.Type.KING:
 			if placement.player == ChessController.Player.WHITE:
 				white_king_count += 1
 			else:
 				black_king_count += 1
 	
-	# Validate king counts
 	if white_king_count != 1:
 		push_error('Invalid placement: Expected exactly 1 white king, found %d' % white_king_count)
 		return false

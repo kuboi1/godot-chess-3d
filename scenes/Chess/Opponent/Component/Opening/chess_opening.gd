@@ -8,7 +8,9 @@ extends Resource
 
 
 func _to_string() -> String:
-	return name if name != '' else 'Unnamed opening'
+	if name:
+		return name
+	return 'Unnamed opening'
 
 
 func get_move_count() -> int:
