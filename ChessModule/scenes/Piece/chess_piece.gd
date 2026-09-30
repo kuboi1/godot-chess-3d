@@ -11,9 +11,6 @@ enum Type {
 	PAWN
 }
 
-const WHITE_MAT_PATH = 'res://ChessModule/scenes/Piece/assets/materials/cp_white_material.tres'
-const BLACK_MAT_PATH = 'res://ChessModule/scenes/Piece/assets/materials/cp_black_material.tres'
-
 signal start_hover
 signal end_hover
 signal clicked
@@ -21,13 +18,16 @@ signal clicked
 @export var owner_player: ChessController.Player = ChessController.Player.WHITE
 @export var type: Type
 
-@onready var pre_select_mat: StandardMaterial3D = preload('res://ChessModule/scenes/Piece/assets/materials/cp_select_material.tres')
+@export_subgroup('Materials')
+@export var white_material: Material
+@export var black_material: Material
+@export var selected_overlay_material: Material
 
 var board_postion: Vector2i
 var selected: bool = false :
 	set(value):
 		selected = value
-		_mesh.material_overlay = pre_select_mat if selected else null
+		_mesh.material_overlay = selected_overlay_material if selected else null
 var move_count: int :
 	get():
 		return _movement_component.move_count
@@ -46,9 +46,9 @@ func _ready() -> void:
 		return
 	
 	if owner_player == ChessController.Player.WHITE:
-		_mesh.material_override = load(WHITE_MAT_PATH)
+		_mesh.material_override = white_material
 	else:
-		_mesh.material_override = load(BLACK_MAT_PATH)
+		_mesh.material_override = black_material
 
 
 func _to_string() -> String:
@@ -114,7 +114,7 @@ func set_hover_effect(value: bool) -> void:
 	if selected:
 		return
 	
-	_mesh.material_overlay = pre_select_mat if value else null
+	_mesh.material_overlay = selected_overlay_material if value else null
 
 
 func _on_mouse_entered() -> void:

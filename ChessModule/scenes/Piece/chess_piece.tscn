@@ -1,12 +1,18 @@
-[gd_scene load_steps=3 format=3 uid="uid://dosodo6vnwnuh"]
+[gd_scene load_steps=6 format=3 uid="uid://dosodo6vnwnuh"]
 
 [ext_resource type="Script" uid="uid://djp7xbasad0cu" path="res://ChessModule/scenes/Piece/chess_piece.gd" id="1_x3v74"]
+[ext_resource type="Material" uid="uid://cv51ace7t3dah" path="res://ChessModule/scenes/Piece/assets/materials/cp_white_material.tres" id="2_52b2t"]
+[ext_resource type="Material" uid="uid://dp2g6jpulxier" path="res://ChessModule/scenes/Piece/assets/materials/cp_black_material.tres" id="3_xu81c"]
+[ext_resource type="Material" uid="uid://biapedrekeqjj" path="res://ChessModule/scenes/Piece/assets/materials/cp_select_material.tres" id="4_frg0p"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_x3v74"]
 size = Vector3(0.5878906, 1.255749, 0.5812683)
 
 [node name="ChessPiece" type="Area3D"]
 script = ExtResource("1_x3v74")
+white_material = ExtResource("2_52b2t")
+black_material = ExtResource("3_xu81c")
+selected_overlay_material = ExtResource("4_frg0p")
 
 [node name="CollisionShape" type="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
